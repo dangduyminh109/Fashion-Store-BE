@@ -18,7 +18,6 @@ public class PostRequest {
     String content;
     @Builder.Default
     Boolean status = true;
-    @NotNull(message = "INVALID_FILE")
     MultipartFile image;
     @Builder.Default
     Boolean imageDelete = false;

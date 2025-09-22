@@ -13,4 +13,6 @@ public class RoleRequest {
     @NotBlank(message = "INVALID_NAME")
     String name;
     String description;
+    @Builder.Default
+    Boolean status = true;
 }

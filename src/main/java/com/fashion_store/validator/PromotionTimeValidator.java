@@ -9,12 +9,12 @@ public class PromotionTimeValidator implements ConstraintValidator<PromotionTime
     @Override
     public boolean isValid(Object value, ConstraintValidatorContext constraintValidatorContext) {
         if (value instanceof VariantCreateRequest request) {
-            if (request.getPromotionStartTime() == null && request.getPromotionEndTime() == null) return true;
-            return request.getPromotionEndTime().isAfter(request.getPromotionStartTime());
+            if (request.getPromotionStartTime() != null && request.getPromotionEndTime() != null)
+                return request.getPromotionEndTime().isAfter(request.getPromotionStartTime());
         }
         if (value instanceof VariantUpdateRequest request) {
-            if (request.getPromotionStartTime() == null && request.getPromotionEndTime() == null) return true;
-            return request.getPromotionEndTime().isAfter(request.getPromotionStartTime());
+            if (request.getPromotionStartTime() != null && request.getPromotionEndTime() != null)
+                return request.getPromotionEndTime().isAfter(request.getPromotionStartTime());
         }
         return true;
     }

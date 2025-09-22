@@ -39,6 +39,13 @@ public class UserController {
                 .build();
     }
 
+    @GetMapping("/myInfo")
+    public ApiResponse<UserResponse> getMyInfo() {
+        return ApiResponse.<UserResponse>builder()
+                .result(userService.getMyInfo())
+                .build();
+    }
+
     @PostMapping
     @PreAuthorize("hasAuthority('USER_CREATE')")
     public ApiResponse<UserResponse> create(@ModelAttribute @Valid UserCreateRequest request) {

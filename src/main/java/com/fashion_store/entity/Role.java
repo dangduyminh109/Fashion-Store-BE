@@ -23,6 +23,7 @@ public class Role extends BaseModel {
     @Column(nullable = false)
     String name;
     String description;
+    Boolean status;
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(

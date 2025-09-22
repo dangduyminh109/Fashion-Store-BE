@@ -6,7 +6,6 @@ import com.fashion_store.dto.order.request.OrderCreateRequest;
 import com.fashion_store.dto.order.request.OrderUpdateRequest;
 import com.fashion_store.dto.order.response.OrderResponse;
 import com.fashion_store.entity.*;
-import com.fashion_store.enums.AuthProvider;
 import com.fashion_store.enums.DiscountType;
 import com.fashion_store.enums.OrderStatus;
 import com.fashion_store.enums.PaymentMethod;
@@ -110,7 +109,7 @@ public class OrderService extends GenerateService<Order, String> {
         request.getOrderItems()
                 .forEach(item -> {
                     OrderItem orderItem = orderItemMapper.toOrderItem(item);
-                    Variant variant = variantRepository.findById(item.getVariantId())
+                    Variant variant = variantRepository.findBySku(item.getSku())
                             .orElseThrow(() -> new AppException(ErrorCode.NOT_EXIST));
                     if (variant.getStatus() == false || variant.getIsDeleted() == true)
                         throw new AppException(ErrorCode.VARIANT_NOT_AVAILABLE);
@@ -180,7 +179,6 @@ public class OrderService extends GenerateService<Order, String> {
             } catch (Exception e) {
                 throw new AppException(ErrorCode.INVALID_PAYMENT_METHOD);
             }
-
         }
 
         orderMapper.updateOrder(order, request);
@@ -192,114 +190,7 @@ public class OrderService extends GenerateService<Order, String> {
             order.setPaidAt(null);
         }
 
-        // khi thay đổi cuttomer
-        // th1: nếu trước đó là customer guest và không có order nào khác ngoài order hiện tại
-        // thì xóa customer guest đó, gắm order hiện tại vào cho customer mới (không phải guest)
-        // th2: nếu trước đó không là customer guest và khi cập nhật trở thành guest
-        // thì tạo customer guest mới là chủ của order đó
-        Customer deleteCustomer = null;
-        if (!request.getCustomerId().equals(order.getCustomer().getId()) && request.getCustomerId() != null) {
-            if (!request.getCustomerId().isBlank()) {
-                long otherOrders = order.getCustomer().getOrders().stream()
-                        .filter(o -> !o.getId().equals(order.getId()))
-                        .count();
-                Customer newCustomer = customerRepository.findById(request.getCustomerId())
-                        .orElseThrow(() -> new AppException(ErrorCode.NOT_EXIST));
-                Customer oldCustomer = order.getCustomer();
-                order.setCustomer(newCustomer);
-                if (oldCustomer.getAuthProvider().equals(AuthProvider.GUEST)
-                        && otherOrders == 0
-                ) {
-                    deleteCustomer = oldCustomer;
-                }
-            } else if (request.getCustomerId().isEmpty()) {
-                if (!order.getCustomer().getAuthProvider().equals(AuthProvider.GUEST)) {
-                    CustomerCreateRequest newCustomer = CustomerCreateRequest.builder()
-                            .fullName(request.getCustomerName())
-                            .phone(request.getPhone())
-                            .isGuest(true)
-                            .authProvider("GUEST")
-                            .build();
-                    Customer customer = customerMapper.toCustomer(newCustomer);
-                    customerRepository.save(customer);
-                    order.setCustomer(customer);
-                }
-            }
-        }
-
-        // Cập nhật voucher
-        if (request.getVoucherId() != null
-                && (order.getVoucher() == null || !order.getVoucher().getId().equals(request.getVoucherId()))) {
-            Voucher voucher = voucherRepository.findById(request.getVoucherId())
-                    .orElseThrow(() -> new AppException(ErrorCode.NOT_EXIST));
-            if (voucher.getStartDate() != null && voucher.getStartDate().isAfter(LocalDateTime.now()))
-                throw new AppException(ErrorCode.VOUCHER_NOT_STARTED);
-            if (voucher.getEndDate() != null && voucher.getEndDate().isBefore(LocalDateTime.now()))
-                throw new AppException(ErrorCode.VOUCHER_EXPIRED);
-            if ((long) voucher.getOrders().size() >= voucher.getQuantity())
-                throw new AppException(ErrorCode.VOUCHER_USAGE_LIMIT_EXCEEDED);
-            order.setVoucher(voucher);
-            order.setVoucherName(voucher.getName());
-            order.setDiscountType(voucher.getDiscountType());
-        }
-
-        // cập nhật order item list
-        if (request.getOrderItems() != null) {
-            order.getOrderItems().clear();
-            List<OrderItem> newOrderItems = new ArrayList<>();
-            final BigDecimal[] totalAmount = {BigDecimal.ZERO};
-            request.getOrderItems()
-                    .forEach(item -> {
-                        OrderItem orderItem = orderItemMapper.toOrderItem(item);
-                        Variant variant = variantRepository.findById(item.getVariantId())
-                                .orElseThrow(() -> new AppException(ErrorCode.NOT_EXIST));
-                        if (variant.getStatus() == false || variant.getIsDeleted() == true)
-                            throw new AppException(ErrorCode.VARIANT_NOT_AVAILABLE);
-                        if (variant.getInventory() < item.getQuantity())
-                            throw new AppException(ErrorCode.INVALID_QUANTITY_UPDATE);
-                        orderItem.setVariant(variant);
-                        orderItem.setProductName(variant.getProduct().getName());
-
-                        if (variant.getPromotionalPrice() != null
-                                && (variant.getPromotionStartTime() != null && variant.getPromotionStartTime().isBefore(LocalDateTime.now()))
-                                && (variant.getPromotionEndTime() != null && variant.getPromotionEndTime().isAfter(LocalDateTime.now()))) {
-                            orderItem.setPrice(variant.getPromotionalPrice());
-                        } else {
-                            orderItem.setPrice(variant.getSalePrice());
-                        }
-
-                        orderItem.setOrder(order);
-                        totalAmount[0] = totalAmount[0].add(
-                                orderItem.getPrice().multiply(BigDecimal.valueOf(orderItem.getQuantity()))
-                        );
-                        newOrderItems.add(orderItem);
-                    });
-            order.getOrderItems().addAll(newOrderItems);
-
-            // cập nhật total amount
-            order.setTotalAmount(totalAmount[0]);
-            if (order.getVoucher() != null) {
-                if (order.getVoucher().getDiscountType().equals(DiscountType.PERCENT)) {
-                    BigDecimal discountValue = order.getTotalAmount()
-                            .multiply(order.getVoucher().getDiscountValue())
-                            .divide(BigDecimal.valueOf(100), 2, RoundingMode.HALF_UP);
-
-                    if (discountValue.compareTo(order.getVoucher().getMaxDiscountValue()) > 0) {
-                        discountValue = order.getVoucher().getMaxDiscountValue();
-                    }
-                    order.setTotalDiscount(discountValue);
-                } else {
-                    order.setTotalDiscount(order.getVoucher().getDiscountValue());
-                }
-            }
-            BigDecimal total = order.getTotalAmount() != null ? order.getTotalAmount() : BigDecimal.ZERO;
-            BigDecimal discount = order.getTotalDiscount() != null ? order.getTotalDiscount() : BigDecimal.ZERO;
-            order.setFinalAmount(total.subtract(discount).max(BigDecimal.ZERO));
-        }
-
         orderRepository.save(order);
-        if (deleteCustomer != null)
-            customerRepository.delete(deleteCustomer);
         return orderMapper.toOrderResponse(order);
     }
 

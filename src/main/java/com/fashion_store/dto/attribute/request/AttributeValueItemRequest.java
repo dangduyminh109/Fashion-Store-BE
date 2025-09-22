@@ -3,6 +3,7 @@ package com.fashion_store.dto.attribute.request;
 import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 import lombok.experimental.FieldDefaults;
+import org.springframework.web.multipart.MultipartFile;
 
 @Data
 @Builder
@@ -14,5 +15,6 @@ public class AttributeValueItemRequest {
     String value;
     Long id;
     String color;
+    MultipartFile image;
     Boolean imageDelete;
 }

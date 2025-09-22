@@ -11,10 +11,11 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
 
 @Mapper(componentModel = "spring", nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE, uses = {ImportItemMapper.class})
 public interface ImportReceiptMapper {
-    ImportReceipt toImportReceipt(ImportReceiptRequest supplierRequest);
+    ImportReceipt toImportReceipt(ImportReceiptRequest importReceiptRequest);
 
-    @Mapping(target = "supplier", source = "supplier.name")
-    ImportReceiptResponse toImportReceiptResponse(ImportReceipt supplier);
+    @Mapping(target = "supplierId", source = "supplier.id")
+    @Mapping(target = "supplierName", source = "supplier.name")
+    ImportReceiptResponse toImportReceiptResponse(ImportReceipt importReceipt);
 
-    void updateImportReceipt(@MappingTarget ImportReceipt supplier, ImportReceiptUpdateRequest importReceiptUpdateRequest);
+    void updateImportReceipt(@MappingTarget ImportReceipt importReceipt, ImportReceiptUpdateRequest importReceiptUpdateRequest);
 }

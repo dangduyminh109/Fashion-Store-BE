@@ -33,7 +33,6 @@ public class ProductController {
                 .build();
     }
 
-
     @GetMapping("/{id}")
     @PreAuthorize("hasAuthority('PRODUCT_VIEW')")
     public ApiResponse<ProductResponse> getInfo(@PathVariable Long id) {

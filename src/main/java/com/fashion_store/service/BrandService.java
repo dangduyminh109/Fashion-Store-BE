@@ -37,16 +37,18 @@ public class BrandService extends GenerateService<Brand, Long> {
         Brand brand = brandMapper.toBrand(request);
 
         // handle image
-        if (!request.getImage().isEmpty()) {
-            try {
-                String imageUrl = cloudinaryService.uploadFile(request.getImage());
-                brand.setImage(imageUrl);
+        if (request.getImage() != null) {
+            if (!request.getImage().isEmpty()) {
+                try {
+                    String imageUrl = cloudinaryService.uploadFile(request.getImage());
+                    brand.setImage(imageUrl);
 
-            } catch (IOException e) {
-                throw new AppException(ErrorCode.FILE_SAVE_FAILED);
+                } catch (IOException e) {
+                    throw new AppException(ErrorCode.FILE_SAVE_FAILED);
+                }
+            } else {
+                brand.setImage("");
             }
-        } else {
-            brand.setImage("");
         }
 
         // slug
@@ -94,7 +96,7 @@ public class BrandService extends GenerateService<Brand, Long> {
 
         // handle image
         boolean imageDelete = request.getImageDelete() != null && request.getImageDelete();
-        if (!request.getImage().isEmpty()) {
+        if (request.getImage() != null && !request.getImage().isEmpty()) {
             try {
                 String imageUrl = cloudinaryService.uploadFile(request.getImage());
                 // Lưu URL vào DB
@@ -105,7 +107,6 @@ public class BrandService extends GenerateService<Brand, Long> {
         } else if (imageDelete) {
             brand.setImage("");
         }
-
 
         // slug
         String baseSlug = GenerateSlugUtils.generateSlug(brand.getName());

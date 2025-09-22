@@ -14,5 +14,6 @@ public class RoleResponse {
     Long id;
     String name;
     String description;
+    Boolean status;
     List<PermissionResponse> permissions;
 }

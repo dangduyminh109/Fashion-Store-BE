@@ -25,10 +25,8 @@ public class UserCreateRequest {
     @Column(unique = true)
     String email;
 
-    @NotNull(message = "INVALID_ROLE_ID")
     Long roleId;
 
-    @NotNull(message = "INVALID_FILE")
     MultipartFile avatar;
 
     @Builder.Default

@@ -47,7 +47,8 @@ public enum ErrorCode {
     INVALID_ATTRIBUTE_COUNT(9117, "Thuộc tính phải có ít nhất một giá trị", HttpStatus.BAD_REQUEST),
     INVALID_IMPORT_PRICE(9118, "Giá nhập không hợp lệ", HttpStatus.BAD_REQUEST),
     INVALID_TYPE(9119, "Loại hiển thị không hợp lệ", HttpStatus.BAD_REQUEST),
-    INVALID_TYPE_DATA(9120, "Dữ liệu loại không hợp lệ", HttpStatus.BAD_REQUEST),
+    INVALID_TYPE_DATA(9120, "Kiểu dữ liệu không hợp lệ", HttpStatus.BAD_REQUEST),
+    SKU_EXISTED(9120, "Mã sản phẩm bị trùng hoặc đã tồn tại", HttpStatus.BAD_REQUEST),
 
     // ===== STOCK / QUANTITY (9130-9139) =====
     INVALID_QUANTITY(9130, "Số lượng phải lớn hơn 0", HttpStatus.BAD_REQUEST),
@@ -89,6 +90,7 @@ public enum ErrorCode {
     EMAIL_SEND_FAILED(9414, "Gửi email thất bại", HttpStatus.INTERNAL_SERVER_ERROR),
     ACTION_FORBIDDEN(9415, "Hành động bị cấm", HttpStatus.FORBIDDEN),
     INVALID_SIGNATURE(9416, "Chữ ký không hợp lệ", HttpStatus.BAD_REQUEST),
+    INVALID_ACCOUNT(9417, "Tài khoản không hợp lệ hoặc đã bị khóa", HttpStatus.FORBIDDEN),
 
     // ===== CUSTOMER / ADDRESS (9500-9599) =====
     INVALID_CUSTOMER_ID(9500, "ID khách hàng không hợp lệ", HttpStatus.BAD_REQUEST),
@@ -100,12 +102,15 @@ public enum ErrorCode {
     INVALID_DISTRICT(9506, "Quận/Huyện không hợp lệ", HttpStatus.BAD_REQUEST),
     INVALID_WARD(9507, "Phường/Xã không hợp lệ", HttpStatus.BAD_REQUEST),
     INVALID_DOB(9508, "Ngày sinh phải từ 17 tuổi trở lên", HttpStatus.BAD_REQUEST),
+    CUSTOMER_HAS_ORDERS(9509, "Không thể xóa vì đang tồn tại đơn hàng liên kết với khách hàng này", HttpStatus.BAD_REQUEST),
 
     // ===== ROLE / PERMISSION (9600-9699) =====
     CANNOT_BE_DELETE(9600, "Không thể xóa vai trò quản trị viên", HttpStatus.BAD_REQUEST),
     CANNOT_BE_UPDATE(9601, "Không thể cập nhật vai trò quản trị viên", HttpStatus.BAD_REQUEST),
     INVALID_ROLE_ID(9602, "ID vai trò không hợp lệ", HttpStatus.BAD_REQUEST),
-    ROLE_IN_USE(9603, "Không thể xóa vai trò vì hiện đang được gán cho một hoặc nhiều người dùng", HttpStatus.BAD_REQUEST);
+    ROLE_IN_USE(9603, "Không thể xóa vai trò vì hiện đang được gán cho một hoặc nhiều người dùng", HttpStatus.BAD_REQUEST),
+    ROLE_UPDATE_NOT_ALLOWED(9604, "Chỉ Admin mới có quền cập nhật vai trò", HttpStatus.BAD_REQUEST),
+    ROLE_DELETE_NOT_ALLOWED(9605, "Chỉ Admin mới có quền xóa vai trò", HttpStatus.BAD_REQUEST);
 
     int code;
     String message;

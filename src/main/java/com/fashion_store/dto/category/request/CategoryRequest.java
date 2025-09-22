@@ -18,7 +18,6 @@ public class CategoryRequest {
     Long parentId;
     @Builder.Default
     Boolean status = true;
-    @NotNull(message = "INVALID_FILE")
     MultipartFile image;
     @Builder.Default
     Boolean imageDelete = false;

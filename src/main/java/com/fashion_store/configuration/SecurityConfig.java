@@ -24,6 +24,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
+    private final String[] PUBLIC_ROUTER = {
+            "/api/admin/auth/**",
+    };
+
     private final String[] PRIVATE_ROUTER = {
             "/api/admin/**",
             "/api/cart/**",
@@ -47,6 +51,7 @@ public class SecurityConfig {
         httpSecurity
                 .authorizeHttpRequests(
                         (authorize) -> authorize
+                                .requestMatchers(PUBLIC_ROUTER).permitAll()
                                 .requestMatchers(PRIVATE_ROUTER).authenticated()
                                 .anyRequest().permitAll()
                 )

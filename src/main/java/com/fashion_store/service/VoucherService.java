@@ -42,14 +42,17 @@ public class VoucherService extends GenerateService<Voucher, Long> {
         return voucherMapper.toVoucherResponse(voucher);
     }
 
-    public List<VoucherResponse> getAll(boolean deleted, String name) {
+    public List<VoucherResponse> getAll(boolean deleted, String search) {
         return voucherRepository.findAll()
                 .stream()
+                .filter(item -> item.getIsDeleted() == deleted)
                 .filter(item -> {
-                    if (name != null) {
-                        return item.getName().trim().toLowerCase().contains(name.trim().toLowerCase()) && item.getIsDeleted() == deleted;
+                    if (search != null) {
+                        return item.getName().trim().toLowerCase().contains(search.trim().toLowerCase()) ||
+                                item.getCode().trim().equals(search.trim().toLowerCase());
+                    } else {
+                        return true;
                     }
-                    return item.getIsDeleted() == deleted;
                 })
                 .map(voucherMapper::toVoucherResponse)
                 .collect(Collectors.toList());

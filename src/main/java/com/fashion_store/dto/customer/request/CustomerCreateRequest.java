@@ -30,7 +30,6 @@ public class CustomerCreateRequest {
     @Builder.Default
     String authProvider = "LOCAL";
 
-    @NotNull(message = "INVALID_FILE")
     MultipartFile avatar;
 
     @Builder.Default

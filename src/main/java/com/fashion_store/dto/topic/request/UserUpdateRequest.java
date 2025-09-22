@@ -26,10 +26,8 @@ public class UserUpdateRequest {
     @Email(message = "INVALID_EMAIL")
     String email;
 
-    @NotNull(message = "INVALID_ROLE_ID")
     Long roleId;
 
-    @NotNull(message = "INVALID_FILE")
     MultipartFile avatar;
 
     @Builder.Default

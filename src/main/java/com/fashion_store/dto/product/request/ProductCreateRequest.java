@@ -38,6 +38,5 @@ public class ProductCreateRequest {
     @Valid
     List<VariantCreateRequest> variantList;
 
-    @NotNull(message = "INVALID_FILE")
     List<MultipartFile> images;
 }

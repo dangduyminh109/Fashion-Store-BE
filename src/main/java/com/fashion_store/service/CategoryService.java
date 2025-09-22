@@ -45,16 +45,18 @@ public class CategoryService extends GenerateService<Category, Long> {
         }
 
         // handle image
-        if (!request.getImage().isEmpty()) {
-            try {
-                String imageUrl = cloudinaryService.uploadFile(request.getImage());
-                category.setImage(imageUrl);
+        if (request.getImage() != null) {
+            if (!request.getImage().isEmpty()) {
+                try {
+                    String imageUrl = cloudinaryService.uploadFile(request.getImage());
+                    category.setImage(imageUrl);
 
-            } catch (IOException e) {
-                throw new AppException(ErrorCode.FILE_SAVE_FAILED);
+                } catch (IOException e) {
+                    throw new AppException(ErrorCode.FILE_SAVE_FAILED);
+                }
+            } else {
+                category.setImage("");
             }
-        } else {
-            category.setImage("");
         }
 
         // slug
@@ -166,7 +168,7 @@ public class CategoryService extends GenerateService<Category, Long> {
         }
         // handle image
         boolean imageDelete = request.getImageDelete() != null && request.getImageDelete();
-        if (!request.getImage().isEmpty()) {
+        if (request.getImage() != null && !request.getImage().isEmpty()) {
             try {
                 String imageUrl = cloudinaryService.uploadFile(request.getImage());
                 // Lưu URL vào DB

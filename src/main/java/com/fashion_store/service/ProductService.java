@@ -57,7 +57,7 @@ public class ProductService extends GenerateService<Product, Long> {
                 .collect(Collectors.groupingBy(VariantCreateRequest::getSku, Collectors.counting()));
         skuCountMap.forEach((sku, count) -> {
             if (count > 1 || variantRepository.existsBySku(sku)) {
-                throw new AppException(ErrorCode.EXISTED);
+                throw new AppException(ErrorCode.SKU_EXISTED);
             }
         });
 
@@ -109,20 +109,22 @@ public class ProductService extends GenerateService<Product, Long> {
 
         // handle image
         List<ProductImage> listProductImage = new ArrayList<>();
-        request.getImages().forEach(img -> {
-            if (!img.isEmpty()) {
-                try {
-                    String imageUrl = cloudinaryService.uploadFile(img);
-                    ProductImage productImage = ProductImage.builder()
-                            .url(imageUrl)
-                            .product(finalProduct)
-                            .build();
-                    listProductImage.add(productImage);
-                } catch (IOException e) {
-                    throw new AppException(ErrorCode.FILE_SAVE_FAILED);
+        if (request.getImages() != null) {
+            request.getImages().forEach(img -> {
+                if (!img.isEmpty()) {
+                    try {
+                        String imageUrl = cloudinaryService.uploadFile(img);
+                        ProductImage productImage = ProductImage.builder()
+                                .url(imageUrl)
+                                .product(finalProduct)
+                                .build();
+                        listProductImage.add(productImage);
+                    } catch (IOException e) {
+                        throw new AppException(ErrorCode.FILE_SAVE_FAILED);
+                    }
                 }
-            }
-        });
+            });
+        }
         product.setProductImages(listProductImage);
 
         product = productRepository.save(product);
@@ -314,7 +316,53 @@ public class ProductService extends GenerateService<Product, Long> {
 
     public ProductResponse getInfo(Long id) {
         Product product = productRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.NOT_EXIST));
-        return productMapper.toProductResponse(product);
+
+        ProductResponse response = productMapper.toProductResponse(product);
+
+        // Nếu không có variants thì trả luôn
+        if (response == null || response.getVariants() == null || product.getVariants() == null) {
+            return response;
+        }
+
+        Map<Long, Variant> variantEntityById = product.getVariants().stream()
+                .filter(v -> v.getId() != null)
+                .collect(Collectors.toMap(
+                        Variant::getId,
+                        v -> v,
+                        (existing, replacement) -> existing // giữ bản đầu khi trùng id
+                ));
+
+        // Duyệt từng variant DTO, tìm entity tương ứng và gán attribute fields
+        response.getVariants().forEach(variantResponse -> {
+            if (variantResponse == null) return;
+
+            Long variantId = variantResponse.getId();
+            Variant variantEntity = variantEntityById.get(variantId);
+            if (variantEntity == null || variantEntity.getAttributeValues() == null) return;
+
+            // Map attributeValueId -> AttributeValue entity
+            Map<Long, AttributeValue> attrValEntityById = variantEntity.getAttributeValues().stream()
+                    .filter(av -> av.getId() != null)
+                    .collect(Collectors.toMap(AttributeValue::getId, av -> av));
+
+            if (variantResponse.getAttributeValues() == null) return;
+
+            variantResponse.getAttributeValues().forEach(attrValResp -> {
+                if (attrValResp == null) return;
+
+                Long attrValId = attrValResp.getId();
+                AttributeValue attrValEntity = attrValEntityById.get(attrValId);
+                if (attrValEntity == null) return;
+
+                if (attrValEntity.getAttribute() != null) {
+                    attrValResp.setAttributeId(attrValEntity.getAttribute().getId());
+                    attrValResp.setAttributeName(attrValEntity.getAttribute().getName());
+                    attrValResp.setDisplayType(attrValEntity.getAttribute().getDisplayType());
+                }
+            });
+        });
+
+        return response;
     }
 
     public ProductResponse update(ProductUpdateRequest request, Long id) {
@@ -343,17 +391,18 @@ public class ProductService extends GenerateService<Product, Long> {
 
         skuCountMap.forEach((sku, count) -> {
             if (count > 1) {
-                throw new AppException(ErrorCode.EXISTED);
+                throw new AppException(ErrorCode.SKU_EXISTED);
             }
         });
+
         for (VariantUpdateRequest variant : request.getVariantList()) {
             if (variant.getId() != null) {
                 if (variantRepository.existsBySkuAndIdNot(variant.getSku(), variant.getId())) {
-                    throw new AppException(ErrorCode.EXISTED);
+                    throw new AppException(ErrorCode.SKU_EXISTED);
                 }
             } else {
                 if (variantRepository.existsBySku(variant.getSku())) {
-                    throw new AppException(ErrorCode.EXISTED);
+                    throw new AppException(ErrorCode.SKU_EXISTED);
                 }
             }
         }
@@ -447,20 +496,23 @@ public class ProductService extends GenerateService<Product, Long> {
             oldProduct.getProductImages().clear();
         }
 
-        request.getImages().forEach(img -> {
-            if (!img.isEmpty()) {
-                try {
-                    String imageUrl = cloudinaryService.uploadFile(img);
-                    ProductImage productImage = ProductImage.builder()
-                            .url(imageUrl)
-                            .product(finalProduct)
-                            .build();
-                    listProductImage.add(productImage);
-                } catch (IOException e) {
-                    throw new AppException(ErrorCode.FILE_SAVE_FAILED);
+        if (request.getImages() != null) {
+            request.getImages().forEach(img -> {
+                if (!img.isEmpty()) {
+                    try {
+                        String imageUrl = cloudinaryService.uploadFile(img);
+                        ProductImage productImage = ProductImage.builder()
+                                .url(imageUrl)
+                                .product(finalProduct)
+                                .build();
+                        listProductImage.add(productImage);
+                    } catch (IOException e) {
+                        throw new AppException(ErrorCode.FILE_SAVE_FAILED);
+                    }
                 }
-            }
-        });
+            });
+        }
+
         if (oldProduct.getProductImages() == null) {
             oldProduct.setProductImages(listProductImage);
         } else {

@@ -25,10 +25,10 @@ public class VoucherController {
     @PreAuthorize("hasAuthority('VOUCHER_VIEW')")
     public ApiResponse<List<VoucherResponse>> getAll(
             @RequestParam(value = "deleted", required = false) boolean deleted,
-            @RequestParam(value = "name", required = false) String name
+            @RequestParam(value = "search", required = false) String search
     ) {
         return ApiResponse.<List<VoucherResponse>>builder()
-                .result(voucherService.getAll(deleted, name))
+                .result(voucherService.getAll(deleted, search))
                 .build();
     }
 

@@ -29,7 +29,6 @@ public class CustomerUpdateRequest {
     @AuthProviderConstraint(message = "INVALID_AUTH_PROVIDER")
     String authProvider;
 
-    @NotNull(message = "INVALID_FILE")
     MultipartFile avatar;
 
     @Builder.Default

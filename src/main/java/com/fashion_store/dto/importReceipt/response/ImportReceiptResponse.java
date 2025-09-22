@@ -15,7 +15,8 @@ public class ImportReceiptResponse {
     Long id;
     String note;
     LocalDateTime importDate;
-    String supplier;
+    Long supplierId;
+    String supplierName;
     Boolean isDeleted;
     List<ImportItemResponse> importItemList;
 }

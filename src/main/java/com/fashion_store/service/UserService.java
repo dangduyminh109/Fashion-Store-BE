@@ -14,7 +14,6 @@ import com.fashion_store.repository.UserRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -25,17 +24,12 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
-public class UserService extends GenerateService<User, String> {
+public class UserService {
     UserRepository userRepository;
     CloudinaryService cloudinaryService;
     UserMapper userMapper;
     RoleRepository roleRepository;
     PasswordEncoder passwordEncoder;
-
-    @Override
-    JpaRepository<User, String> getRepository() {
-        return userRepository;
-    }
 
     public UserResponse create(UserCreateRequest request) {
         if (userRepository.existsByUsername(request.getUsername()))
@@ -44,21 +38,28 @@ public class UserService extends GenerateService<User, String> {
             throw new AppException(ErrorCode.EXISTED);
         User user = userMapper.toUser(request);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
-        Role role = roleRepository.findById(request.getRoleId())
-                .orElseThrow(() -> new AppException(ErrorCode.NOT_EXIST));
-        user.setRole(role);
-        // handle image
-        if (!request.getAvatar().isEmpty()) {
-            try {
-                String imageUrl = cloudinaryService.uploadFile(request.getAvatar());
-                user.setAvatar(imageUrl);
 
-            } catch (IOException e) {
-                throw new AppException(ErrorCode.FILE_SAVE_FAILED);
-            }
-        } else {
-            user.setAvatar("");
+        if (request.getRoleId() != null) {
+            Role role = roleRepository.findById(request.getRoleId())
+                    .orElseThrow(() -> new AppException(ErrorCode.NOT_EXIST));
+            user.setRole(role);
         }
+
+        // handle image
+        if (request.getAvatar() != null) {
+            if (!request.getAvatar().isEmpty()) {
+                try {
+                    String imageUrl = cloudinaryService.uploadFile(request.getAvatar());
+                    user.setAvatar(imageUrl);
+
+                } catch (IOException e) {
+                    throw new AppException(ErrorCode.FILE_SAVE_FAILED);
+                }
+            } else {
+                user.setAvatar("");
+            }
+        }
+
         user = userRepository.save(user);
         return userMapper.toUserResponse(user);
     }
@@ -73,6 +74,16 @@ public class UserService extends GenerateService<User, String> {
 
     public UserResponse getInfo(String id) {
         User user = userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.NOT_EXIST));
+        return userMapper.toUserResponse(user);
+    }
+
+    public UserResponse getMyInfo() {
+        String userId = SecurityUtils.getCurrentUserId();
+        if (userId == null)
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        User user = userRepository.findById(userId).orElseThrow(() -> new AppException(ErrorCode.NOT_EXIST));
+        if (user.getIsDeleted())
+            throw new AppException(ErrorCode.INVALID_ACCOUNT);
         return userMapper.toUserResponse(user);
     }
 
@@ -114,11 +125,13 @@ public class UserService extends GenerateService<User, String> {
             Role role = roleRepository.findById(request.getRoleId())
                     .orElseThrow(() -> new AppException(ErrorCode.NOT_EXIST));
             user.setRole(role);
+        } else {
+            user.setRole(null);
         }
 
         // handle avatar
         boolean avatarDelete = request.getAvatarDelete() != null && request.getAvatarDelete();
-        if (!request.getAvatar().isEmpty()) {
+        if (request.getAvatar() != null && !request.getAvatar().isEmpty()) {
             try {
                 String avatarUrl = cloudinaryService.uploadFile(request.getAvatar());
                 // Lưu URL vào DB
@@ -130,19 +143,47 @@ public class UserService extends GenerateService<User, String> {
             user.setAvatar("");
         }
 
+
         user = userRepository.save(user);
         return userMapper.toUserResponse(user);
     }
 
     public void delete(String id) {
-        User item = getRepository().findById(id).orElseThrow(() -> new AppException(ErrorCode.NOT_EXIST));
+        User item = userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.NOT_EXIST));
         String currentUserId = SecurityUtils.getCurrentUserId();
         if (id.equals(currentUserId)) {
             throw new AppException(ErrorCode.ACTION_FORBIDDEN);
         }
         try {
             item.setIsDeleted(true);
-            getRepository().save(item);
+            userRepository.save(item);
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.INTERNAL_EXCEPTION);
+        }
+    }
+
+    public void restore(String id) {
+        User item = userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.NOT_EXIST));
+        String currentUserId = SecurityUtils.getCurrentUserId();
+        if (id.equals(currentUserId)) {
+            throw new AppException(ErrorCode.ACTION_FORBIDDEN);
+        }
+        try {
+            item.setIsDeleted(false);
+            userRepository.save(item);
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.INTERNAL_EXCEPTION);
+        }
+    }
+
+    public void destroy(String id) {
+        User item = userRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.NOT_EXIST));
+        String currentUserId = SecurityUtils.getCurrentUserId();
+        if (id.equals(currentUserId)) {
+            throw new AppException(ErrorCode.ACTION_FORBIDDEN);
+        }
+        try {
+            userRepository.delete(item);
         } catch (Exception e) {
             throw new AppException(ErrorCode.INTERNAL_EXCEPTION);
         }

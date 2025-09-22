@@ -35,7 +35,6 @@ public class ProductUpdateRequest {
     @Valid
     List<VariantUpdateRequest> variantList;
 
-    @NotNull(message = "INVALID_FILE")
     List<MultipartFile> images;
 
     List<String> listDeletedImage;

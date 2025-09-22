@@ -41,6 +41,9 @@ public class CustomJwtAuthenticationConverter implements Converter<Jwt, Abstract
         if (type.equals(TypeUser.ADMIN.name())) {
             Optional<User> userOpt = userRepository.findByUsernameFetchPermissions(username);
             if (userOpt.isPresent()) {
+                if (userOpt.get().getRole().getIsDeleted() || !userOpt.get().getRole().getStatus()) {
+                    throw new AppException(ErrorCode.UNAUTHORIZED);
+                }
                 User user = userOpt.get();
                 if (!user.getStatus() || Boolean.TRUE.equals(user.getIsDeleted())) {
                     throw new AppException(ErrorCode.UNAUTHORIZED);

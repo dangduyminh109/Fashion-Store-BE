@@ -24,9 +24,6 @@ public class AttributeRequest {
     @Builder.Default
     String displayType = "text";
 
-    @NotNull(message = "INVALID_FILE")
-    List<MultipartFile> image;
-
     @Size(min = 1, message = "INVALID_ATTRIBUTE_COUNT")
     @NotNull(message = "INVALID_ATTRIBUTE_COUNT")
     @Valid

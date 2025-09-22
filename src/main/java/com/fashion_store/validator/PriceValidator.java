@@ -19,13 +19,13 @@ public class PriceValidator implements ConstraintValidator<PriceConstraint, Obje
             BigDecimal sale = request.getSalePrice();
             BigDecimal promo = request.getPromotionalPrice();
             boolean isValid = true;
-            if (original != null && original.compareTo(BigDecimal.ZERO) <= 0) {
+            if (original != null && original.compareTo(BigDecimal.ZERO) < 0) {
                 isValid = false;
             }
-            if (sale == null || sale.compareTo(BigDecimal.ZERO) <= 0) {
+            if (sale == null || sale.compareTo(BigDecimal.ZERO) < 0) {
                 isValid = false;
             }
-            if (promo != null && promo.compareTo(BigDecimal.ZERO) <= 0) {
+            if (promo != null && promo.compareTo(BigDecimal.ZERO) < 0) {
                 isValid = false;
             }
             if (promo != null && sale != null && promo.compareTo(sale) > 0) {
@@ -39,13 +39,13 @@ public class PriceValidator implements ConstraintValidator<PriceConstraint, Obje
             BigDecimal sale = request.getSalePrice();
             BigDecimal promo = request.getPromotionalPrice();
             boolean isValid = true;
-            if (original != null && original.compareTo(BigDecimal.ZERO) <= 0) {
+            if (original != null && original.compareTo(BigDecimal.ZERO) < 0) {
                 isValid = false;
             }
-            if (sale == null || sale.compareTo(BigDecimal.ZERO) <= 0) {
+            if (sale == null || sale.compareTo(BigDecimal.ZERO) < 0) {
                 isValid = false;
             }
-            if (promo != null && promo.compareTo(BigDecimal.ZERO) <= 0) {
+            if (promo != null && promo.compareTo(BigDecimal.ZERO) < 0) {
                 isValid = false;
             }
             if (promo != null && sale != null && promo.compareTo(sale) > 0) {

@@ -46,16 +46,18 @@ public class PostService extends GenerateService<Post, Long> {
         }
 
         // handle image
-        if (!request.getImage().isEmpty()) {
-            try {
-                String imageUrl = cloudinaryService.uploadFile(request.getImage());
-                post.setImage(imageUrl);
+        if (request.getImage() != null) {
+            if (!request.getImage().isEmpty()) {
+                try {
+                    String imageUrl = cloudinaryService.uploadFile(request.getImage());
+                    post.setImage(imageUrl);
 
-            } catch (IOException e) {
-                throw new AppException(ErrorCode.FILE_SAVE_FAILED);
+                } catch (IOException e) {
+                    throw new AppException(ErrorCode.FILE_SAVE_FAILED);
+                }
+            } else {
+                post.setImage("");
             }
-        } else {
-            post.setImage("");
         }
 
         // slug
@@ -109,7 +111,7 @@ public class PostService extends GenerateService<Post, Long> {
 
         // handle image
         boolean imageDelete = request.getImageDelete() != null && request.getImageDelete();
-        if (!request.getImage().isEmpty()) {
+        if (request.getImage() != null && !request.getImage().isEmpty()) {
             try {
                 String imageUrl = cloudinaryService.uploadFile(request.getImage());
                 // Lưu URL vào DB

@@ -10,8 +10,8 @@ import lombok.experimental.FieldDefaults;
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
 public class OrderItemRequest {
-    @NotNull(message = "INVALID_VARIANT_ID")
-    Long variantId;
+    @NotNull(message = "INVALID_SKU")
+    String sku;
     @NotNull(message = "INVALID_QUANTITY")
     Integer quantity;
 }

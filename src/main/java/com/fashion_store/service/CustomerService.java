@@ -44,7 +44,7 @@ public class CustomerService extends GenerateService<Customer, String> {
         customer.setPassword(passwordEncoder.encode(request.getPassword().trim()));
 
         // handle avatar
-        if (!request.getAvatar().isEmpty()) {
+        if (request.getAvatar() != null && !request.getAvatar().isEmpty()) {
             try {
                 String avatarUrl = cloudinaryService.uploadFile(request.getAvatar());
                 customer.setAvatar(avatarUrl);
@@ -112,7 +112,7 @@ public class CustomerService extends GenerateService<Customer, String> {
         }
         // handle avatar
         boolean avatarDelete = request.getAvatarDelete() != null && request.getAvatarDelete();
-        if (!request.getAvatar().isEmpty()) {
+        if (request.getAvatar() != null && !request.getAvatar().isEmpty()) {
             try {
                 String avatarUrl = cloudinaryService.uploadFile(request.getAvatar());
                 // Lưu URL vào DB
@@ -126,5 +126,18 @@ public class CustomerService extends GenerateService<Customer, String> {
 
         customer = customerRepository.save(customer);
         return customerMapper.toCustomerResponse(customer);
+    }
+
+    public void destroy(String id) {
+        Customer item = customerRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.NOT_EXIST));
+        if (item.getOrders() == null || item.getOrders().isEmpty()) {
+            try {
+                customerRepository.delete(item);
+            } catch (Exception e) {
+                throw new AppException(ErrorCode.INTERNAL_EXCEPTION);
+            }
+        } else {
+            throw new AppException(ErrorCode.CUSTOMER_HAS_ORDERS);
+        }
     }
 }
