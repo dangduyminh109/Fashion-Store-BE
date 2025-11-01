@@ -4,10 +4,7 @@ import com.fashion_store.Utils.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.security.oauth2.jwt.JwtDecoder;
-import org.springframework.security.oauth2.jwt.JwtException;
-import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.security.oauth2.jwt.*;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.spec.SecretKeySpec;
@@ -26,9 +23,11 @@ public class CustomJwtDecoder implements JwtDecoder {
         try {
             boolean isValid = jwtUtils.introspect(token);
             if (!isValid)
-                throw new JwtException("Token Invalid");
+                throw new BadJwtException("Token Invalid");
+        } catch (JwtException e) {
+            throw e;
         } catch (Exception e) {
-            throw new JwtException(e.getMessage());
+            throw new BadJwtException("Token decode error: " + e.getMessage());
         }
         if (Objects.isNull(nimbusJwtDecoder)) {
             SecretKeySpec secretKeySpec = new SecretKeySpec(signerKey.getBytes(), "HS512");

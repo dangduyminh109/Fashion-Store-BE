@@ -4,6 +4,7 @@ import com.fashion_store.Utils.JwtUtils;
 import com.fashion_store.dto.auth.request.CustomerAuthRequest;
 import com.fashion_store.dto.auth.request.LogoutRequest;
 import com.fashion_store.dto.auth.request.RefreshRequest;
+import com.fashion_store.dto.customer.request.CustomerForgotPasswordRequest;
 import com.fashion_store.dto.customer.request.CustomerRegisterRequest;
 import com.fashion_store.dto.customer.request.SendOtpRequest;
 import com.fashion_store.enums.TypeUser;
@@ -132,12 +133,24 @@ public class CustomerAuthService {
         return customerResponse;
     }
 
-    public String sendOtp(SendOtpRequest request) throws MessagingException {
-        boolean existingCustomer = customerRepository.existsByEmail(request.getEmail());
-        if (existingCustomer) {
-            throw new AppException(ErrorCode.EXISTED);
-        }
+    public String forgotPassword(CustomerForgotPasswordRequest request) throws JOSEException {
+        Otp otp = otpRepository.findByEmailAndCode(request.getEmail(), request.getOtp())
+                .orElseThrow(() -> new AppException(ErrorCode.INVALID_OTP));
+        if (otp.getExpiryTime().isBefore(LocalDateTime.now()))
+            throw new AppException(ErrorCode.INVALID_OTP);
+        if (!request.getNewPassword().equals(request.getConfirmPassword()))
+            throw new AppException(ErrorCode.INVALID_PASSWORD);
 
+        Customer customer = customerRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_EXIST));
+
+        customer.setPassword(passwordEncoder.encode(request.getNewPassword().trim()));
+
+        otpRepository.delete(otp);
+        return "Đổi mật khẩu thành công";
+    }
+
+    public String sendOtp(SendOtpRequest request) throws MessagingException {
         Optional<Otp> existingOtp = otpRepository.findFirstByEmailAndExpiryTimeAfter(
                 request.getEmail(), LocalDateTime.now());
 

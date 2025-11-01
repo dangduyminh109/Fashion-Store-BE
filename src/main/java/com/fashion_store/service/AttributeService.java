@@ -11,17 +11,16 @@ import com.fashion_store.exception.ErrorCode;
 import com.fashion_store.mapper.AttributeMapper;
 import com.fashion_store.mapper.AttributeValueMapper;
 import com.fashion_store.repository.AttributeRepository;
+import com.fashion_store.repository.AttributeValueRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -32,6 +31,7 @@ public class AttributeService extends GenerateService<Attribute, Long> {
     AttributeRepository attributeRepository;
     AttributeMapper attributeMapper;
     AttributeValueMapper attributeValueMapper;
+    AttributeValueRepository attributeValueRepository;
     CloudinaryService cloudinaryService;
 
     @Override
@@ -104,6 +104,7 @@ public class AttributeService extends GenerateService<Attribute, Long> {
         return response;
     }
 
+    @Transactional
     public AttributeResponse update(AttributeRequest request, Long id) {
         Attribute attribute = attributeRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.NOT_EXIST));
         if (attributeRepository.existsByNameAndIdNot(request.getName(), id))
@@ -124,32 +125,52 @@ public class AttributeService extends GenerateService<Attribute, Long> {
         }
         attributeMapper.updateAttribute(attribute, request);
 
-        // cập nhật list attribute value
-        List<AttributeValue> newAttributeValues = new ArrayList<>();
+        // Lấy các id AttributeValue trong request
+        List<Long> requestIds = request.getListAttributeValue().stream()
+                .map(AttributeValueItemRequest::getId)
+                .filter(Objects::nonNull)
+                .toList();
+
+        // Xóa các AttributeValue cũ không còn trong request
+        List<AttributeValue> toRemove = attribute.getAttributeValues().stream()
+                .filter(av -> av.getId() != null && !requestIds.contains(av.getId()))
+                .toList();
+
+        for (AttributeValue oldValue : toRemove) {
+            try {
+                attributeValueRepository.delete(oldValue);
+                attribute.getAttributeValues().remove(oldValue);
+            } catch (Exception e) {
+                throw new AppException(ErrorCode.CANNOT_DELETE_ATTRIBUTE_IN_USE);
+            }
+        }
+
+        // Cập nhật hoặc thêm mới AttributeValue
         request.getListAttributeValue().forEach(attributeValueItemRequest -> {
             AttributeValue attributeValue = attributeValueMapper.toAttributeValue(attributeValueItemRequest);
+
             if (attributeValueItemRequest.getId() == null) {
                 attributeValue.setAttribute(attribute);
-                // handle image
                 if (attributeValueItemRequest.getImage() != null) {
                     try {
                         String imageUrl = cloudinaryService.uploadFile(attributeValueItemRequest.getImage());
-                        // Lưu URL vào DB
                         attributeValue.setImage(imageUrl);
                     } catch (IOException e) {
                         throw new AppException(ErrorCode.FILE_SAVE_FAILED);
                     }
                 }
-                newAttributeValues.add(attributeValue);
+                attribute.getAttributeValues().add(attributeValue);
+
             } else if (attributeValueOld.containsKey(attributeValueItemRequest.getId())) {
                 AttributeValue updateItem = attributeValueOld.get(attributeValueItemRequest.getId());
                 attributeValueMapper.updateAttributeValue(updateItem, attributeValueItemRequest);
-                // handle image
-                boolean imageDelete = attributeValueItemRequest.getImageDelete() != null && attributeValueItemRequest.getImageDelete();
+
+                boolean imageDelete = attributeValueItemRequest.getImageDelete() != null
+                        && attributeValueItemRequest.getImageDelete();
+
                 if (attributeValueItemRequest.getImage() != null) {
                     try {
                         String imageUrl = cloudinaryService.uploadFile(attributeValueItemRequest.getImage());
-                        // Lưu URL vào DB
                         updateItem.setImage(imageUrl);
                     } catch (IOException e) {
                         throw new AppException(ErrorCode.FILE_SAVE_FAILED);
@@ -157,28 +178,23 @@ public class AttributeService extends GenerateService<Attribute, Long> {
                 } else if (imageDelete) {
                     updateItem.setImage("");
                 }
-                // trường hợp listAttributeValue có id trùng với id trước đó, xóa bỏ item cập nhật trước đó khỏi danh sách.
-                //                "listAttributeValue":
-                //                {"id": 38, "value": "Lam","color": "#fff" },
-                //                {"id": 38, "value": "hồng","color": "#0ff" }
-                newAttributeValues.removeIf(val -> val.getId() != null && val.getId().equals(updateItem.getId()));
-                newAttributeValues.add(updateItem);
             }
         });
 
-        attribute.getAttributeValues().clear();
-        attribute.getAttributeValues().addAll(newAttributeValues);
+        // Lưu lại attribute
         attributeRepository.save(attribute);
 
-        // handle respone
         AttributeResponse response = attributeMapper.toAttributeResponse(attribute);
-
         response.setAttributeDisplayType(attribute.getDisplayType());
 
         if (attribute.getAttributeValues() != null) {
-            response.setListAttributeValue(attribute.getAttributeValues().stream()
-                    .map(attributeValueMapper::toAttributeValueResponse).collect(Collectors.toList()));
+            response.setListAttributeValue(
+                    attribute.getAttributeValues().stream()
+                            .map(attributeValueMapper::toAttributeValueResponse)
+                            .collect(Collectors.toList())
+            );
         }
+
         return response;
     }
 }

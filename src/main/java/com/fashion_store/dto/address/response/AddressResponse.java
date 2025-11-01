@@ -18,4 +18,7 @@ public class AddressResponse {
     String district;
     String ward;
     Boolean isDefault;
+    Integer cityId;
+    Integer districtId;
+    Integer wardId;
 }

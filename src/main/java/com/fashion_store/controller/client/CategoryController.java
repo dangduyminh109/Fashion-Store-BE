@@ -1,5 +1,6 @@
 package com.fashion_store.controller.client;
 
+import com.fashion_store.dto.category.response.CategoryFeaturedResponse;
 import com.fashion_store.dto.category.response.CategoryTreeResponse;
 import com.fashion_store.dto.common.response.ApiResponse;
 import com.fashion_store.service.CategoryService;
@@ -25,6 +26,15 @@ public class CategoryController {
     ) {
         return ApiResponse.<List<CategoryTreeResponse>>builder()
                 .result(categoryService.getTree(id))
+                .build();
+    }
+
+    @GetMapping("/featured")
+    public ApiResponse<List<CategoryFeaturedResponse>> getFeatured(
+            @RequestParam(value = "quantity", defaultValue = "6") Integer quantity
+    ) {
+        return ApiResponse.<List<CategoryFeaturedResponse>>builder()
+                .result(categoryService.getFeatured(quantity))
                 .build();
     }
 }

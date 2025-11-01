@@ -22,6 +22,9 @@ public class OrderResponse {
     String city;
     String district;
     String ward;
+    Integer cityId;
+    Integer districtId;
+    Integer wardId;
     String note;
     String paymentMethod;
     Boolean isDeleted;

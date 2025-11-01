@@ -2,6 +2,7 @@ package com.fashion_store.service;
 
 import com.fashion_store.Utils.GenerateSlugUtils;
 import com.fashion_store.dto.category.request.CategoryRequest;
+import com.fashion_store.dto.category.response.CategoryFeaturedResponse;
 import com.fashion_store.dto.category.response.CategoryResponse;
 import com.fashion_store.dto.category.response.CategoryTreeResponse;
 import com.fashion_store.entity.Category;
@@ -112,24 +113,39 @@ public class CategoryService extends GenerateService<Category, Long> {
 
         List<CategoryTreeResponse> roots = new ArrayList<>();
         for (Category c : all) {
-            Long cid = c.getId();
-            if (excluded.contains(cid)) continue;
+            if (c.getStatus() == true && c.getIsDeleted() == false) {
+                Long cid = c.getId();
+                if (excluded.contains(cid)) continue;
 
-            Long pid = c.getParent() == null ? null : c.getParent().getId();
-            if (pid != null && !excluded.contains(pid)) {
-                CategoryTreeResponse parent = map.get(pid);
-                if (parent != null) parent.getChildren().add(map.get(cid));
-                else roots.add(map.get(cid));
-            } else {
-                if (pid == null) {
-                    roots.add(map.get(cid));
+                Long pid = c.getParent() == null ? null : c.getParent().getId();
+                if (pid != null && !excluded.contains(pid)) {
+                    CategoryTreeResponse parent = map.get(pid);
+                    if (parent != null) parent.getChildren().add(map.get(cid));
+                    else roots.add(map.get(cid));
                 } else {
-                    roots.add(map.get(cid));
+                    if (pid == null) {
+                        roots.add(map.get(cid));
+                    } else {
+                        roots.add(map.get(cid));
+                    }
                 }
             }
         }
 
         return roots;
+    }
+
+    public List<CategoryFeaturedResponse> getFeatured(int quantity) {
+        List<Object[]> rows = categoryRepository.getFeatured(quantity);
+        return rows.stream()
+                .map(r -> CategoryFeaturedResponse.builder()
+                        .id(((Number) r[0]).longValue())
+                        .slug((String) r[1])
+                        .name((String) r[2])
+                        .image((String) r[3])
+                        .productCount(((Number) r[4]).intValue())
+                        .build())
+                .toList();
     }
 
     public List<CategoryResponse> getAll(boolean deleted) {

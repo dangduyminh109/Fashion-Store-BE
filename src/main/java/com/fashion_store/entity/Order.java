@@ -49,6 +49,14 @@ public class Order extends BaseModel {
     String district;
     @Column(nullable = false)
     String ward;
+
+    @Column(nullable = false)
+    Integer cityId;
+    @Column(nullable = false)
+    Integer districtId;
+    @Column(nullable = false)
+    Integer wardId;
+
     String note;
     String transactionRef;
 

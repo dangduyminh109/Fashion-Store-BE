@@ -2,6 +2,7 @@ package com.fashion_store.service;
 
 import com.fashion_store.Utils.SecurityUtils;
 import com.fashion_store.dto.customer.request.CustomerCreateRequest;
+import com.fashion_store.dto.customer.request.CustomerUpdateInfoRequest;
 import com.fashion_store.dto.customer.request.CustomerUpdateRequest;
 import com.fashion_store.dto.customer.response.CustomerResponse;
 import com.fashion_store.entity.Customer;
@@ -94,6 +95,31 @@ public class CustomerService extends GenerateService<Customer, String> {
             throw new AppException(ErrorCode.INTERNAL_EXCEPTION);
         }
     }
+
+    public CustomerResponse CustomerUpdateInfo(CustomerUpdateInfoRequest request) {
+        String customerId = SecurityUtils.getCurrentUserId();
+        if (customerId == null)
+            throw new AppException(ErrorCode.UNAUTHORIZED);
+        Customer customer = customerRepository.findById(customerId).orElseThrow(() -> new AppException(ErrorCode.NOT_EXIST));
+        customerMapper.customerUpdateInfo(customer, request);
+        // handle avatar
+        boolean avatarDelete = request.getAvatarDelete() != null && request.getAvatarDelete();
+        if (request.getAvatar() != null && !request.getAvatar().isEmpty()) {
+            try {
+                String avatarUrl = cloudinaryService.uploadFile(request.getAvatar());
+                // Lưu URL vào DB
+                customer.setAvatar(avatarUrl);
+            } catch (IOException e) {
+                throw new AppException(ErrorCode.FILE_SAVE_FAILED);
+            }
+        } else if (avatarDelete) {
+            customer.setAvatar("");
+        }
+
+        customer = customerRepository.save(customer);
+        return customerMapper.toCustomerResponse(customer);
+    }
+
 
     public CustomerResponse update(CustomerUpdateRequest request, String id) {
         Customer customer = customerRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.NOT_EXIST));

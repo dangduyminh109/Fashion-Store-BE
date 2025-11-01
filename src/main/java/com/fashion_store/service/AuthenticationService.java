@@ -19,9 +19,7 @@ import com.nimbusds.jwt.SignedJWT;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import lombok.experimental.NonFinal;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -38,18 +36,6 @@ public class AuthenticationService {
     InvalidatedTokenRepository invalidatedTokenRepository;
     UserMapper userMapper;
     JwtUtils jwtUtils;
-
-    @NonFinal
-    @Value("${jwt.signerKey}")
-    protected String SIGNER_KEY;
-
-    @NonFinal
-    @Value("${jwt.valid-duration}")
-    protected long VALID_DURATION;
-
-    @NonFinal
-    @Value("${jwt.refreshable-duration}")
-    protected long REFRESH_DURATION;
 
     public UserResponse login(AuthenticationRequest request) throws JOSEException {
         PasswordEncoder passwordEncoder = new BCryptPasswordEncoder(10);

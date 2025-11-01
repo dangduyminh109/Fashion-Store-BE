@@ -1,6 +1,7 @@
 package com.fashion_store.mapper;
 
 import com.fashion_store.dto.post.request.PostRequest;
+import com.fashion_store.dto.post.response.PostClientResponse;
 import com.fashion_store.dto.post.response.PostResponse;
 import com.fashion_store.entity.Post;
 import org.mapstruct.Mapper;
@@ -22,4 +23,7 @@ public interface PostMapper {
     @Mapping(target = "image", ignore = true)
     @Mapping(target = "slug", ignore = true)
     void updatePost(@MappingTarget Post post, PostRequest postRequest);
+
+    @Mapping(target = "topicName", expression = "java(post.getTopic() != null ? post.getTopic().getName() : null)")
+    PostClientResponse toPostClientResponse(Post post);
 }

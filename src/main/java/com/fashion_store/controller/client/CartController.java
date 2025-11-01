@@ -27,7 +27,7 @@ public class CartController {
                 .build();
     }
 
-    @PostMapping("/add")
+    @PostMapping
     public ApiResponse<CartItemResponse> add(@RequestBody CartItemRequest cartItemRequest) {
         return ApiResponse.<CartItemResponse>builder()
                 .result(cartService.add(cartItemRequest))

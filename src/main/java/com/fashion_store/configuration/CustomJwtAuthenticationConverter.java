@@ -33,13 +33,13 @@ public class CustomJwtAuthenticationConverter implements Converter<Jwt, Abstract
 
     @Override
     public AbstractAuthenticationToken convert(Jwt jwt) {
-        String username = jwt.getSubject();
-        if (username == null) {
+        String usernameOrEmail = jwt.getSubject();
+        if (usernameOrEmail == null) {
             throw new AppException(ErrorCode.INVALID_TOKEN);
         }
         String type = jwt.getClaim("type");
         if (type.equals(TypeUser.ADMIN.name())) {
-            Optional<User> userOpt = userRepository.findByUsernameFetchPermissions(username);
+            Optional<User> userOpt = userRepository.findByUsernameFetchPermissions(usernameOrEmail);
             if (userOpt.isPresent()) {
                 if (userOpt.get().getRole().getIsDeleted() || !userOpt.get().getRole().getStatus()) {
                     throw new AppException(ErrorCode.UNAUTHORIZED);
@@ -56,7 +56,7 @@ public class CustomJwtAuthenticationConverter implements Converter<Jwt, Abstract
             }
             throw new AppException(ErrorCode.UNAUTHORIZED);
         } else if (type.equals(TypeUser.CUSTOMER.name())) {
-            Optional<Customer> customerOpt = customerRepository.findByEmail(username);
+            Optional<Customer> customerOpt = customerRepository.findByEmail(usernameOrEmail);
             if (customerOpt.isPresent()) {
                 Customer customer = customerOpt.get();
                 return new UsernamePasswordAuthenticationToken(customer.getId(), jwt, Collections.emptyList());

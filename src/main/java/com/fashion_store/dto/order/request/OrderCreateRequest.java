@@ -29,7 +29,15 @@ public class OrderCreateRequest {
     String city;
     @NotBlank(message = "INVALID_DISTRICT")
     String district;
+    @NotNull(message = "INVALID_WARD")
     String ward;
+    @NotNull(message = "INVALID_CITY")
+    Integer cityId;
+    @NotNull(message = "INVALID_DISTRICT")
+    Integer districtId;
+    @NotNull(message = "INVALID_WARD")
+    Integer wardId;
+
     String note;
     String customerId;
     Long voucherId;

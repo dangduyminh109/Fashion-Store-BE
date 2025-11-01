@@ -49,7 +49,8 @@ public enum ErrorCode {
     INVALID_TYPE(9119, "Loại hiển thị không hợp lệ", HttpStatus.BAD_REQUEST),
     INVALID_TYPE_DATA(9120, "Kiểu dữ liệu không hợp lệ", HttpStatus.BAD_REQUEST),
     SKU_EXISTED(9120, "Mã sản phẩm bị trùng hoặc đã tồn tại", HttpStatus.BAD_REQUEST),
-
+    CANNOT_DELETE_ATTRIBUTE_IN_USE(9120, "Không thể Cập Nhật/Xóa thuộc tính. Giá trị của thuộc tính đang được sử dụng", HttpStatus.BAD_REQUEST),
+    
     // ===== STOCK / QUANTITY (9130-9139) =====
     INVALID_QUANTITY(9130, "Số lượng phải lớn hơn 0", HttpStatus.BAD_REQUEST),
     INVALID_QUANTITY_UPDATE(9131, "Số lượng yêu cầu vượt quá số lượng hiện có", HttpStatus.BAD_REQUEST),

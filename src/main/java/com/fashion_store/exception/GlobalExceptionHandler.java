@@ -7,6 +7,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.authentication.AuthenticationServiceException;
+import org.springframework.security.oauth2.jwt.JwtException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -101,6 +103,18 @@ public class GlobalExceptionHandler {
         );
     }
 
+    // token hết hạn
+    @ExceptionHandler(value = AuthenticationServiceException.class)
+    ResponseEntity<ApiResponse> AuthenticationServiceExceptionHandler(AuthenticationServiceException exception) {
+        ErrorCode errorCode = ErrorCode.UNAUTHORIZED;
+        return ResponseEntity.status(errorCode.getHttpStatusCode()).body(
+                ApiResponse.builder()
+                        .code(errorCode.getCode())
+                        .message(errorCode.getMessage())
+                        .build()
+        );
+    }
+
     // lỗi content-type
     @ExceptionHandler(HttpMediaTypeNotSupportedException.class)
     ResponseEntity<ApiResponse<Void>> HttpMediaTypeNotSupportedExceptionHandler(HttpMediaTypeNotSupportedException e) {
@@ -116,6 +130,18 @@ public class GlobalExceptionHandler {
     // không có quyền truy cập
     @ExceptionHandler(value = AccessDeniedException.class)
     ResponseEntity<ApiResponse> AccessDeniedExceptionHandler(AccessDeniedException exception) {
+        ErrorCode errorCode = ErrorCode.UNAUTHORIZED;
+        return ResponseEntity.status(errorCode.getHttpStatusCode()).body(
+                ApiResponse.builder()
+                        .code(errorCode.getCode())
+                        .message(errorCode.getMessage())
+                        .build()
+        );
+    }
+
+    // không có quyền truy cập
+    @ExceptionHandler(value = JwtException.class)
+    ResponseEntity<ApiResponse> JwtExceptionHandler(JwtException exception) {
         ErrorCode errorCode = ErrorCode.UNAUTHORIZED;
         return ResponseEntity.status(errorCode.getHttpStatusCode()).body(
                 ApiResponse.builder()

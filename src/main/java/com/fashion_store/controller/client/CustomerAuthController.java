@@ -3,6 +3,7 @@ package com.fashion_store.controller.client;
 import com.fashion_store.dto.auth.request.CustomerAuthRequest;
 import com.fashion_store.dto.auth.request.LogoutRequest;
 import com.fashion_store.dto.auth.request.RefreshRequest;
+import com.fashion_store.dto.customer.request.CustomerForgotPasswordRequest;
 import com.fashion_store.dto.customer.request.CustomerRegisterRequest;
 import com.fashion_store.dto.customer.request.SendOtpRequest;
 import com.fashion_store.dto.common.response.ApiResponse;
@@ -53,6 +54,13 @@ public class CustomerAuthController {
     ApiResponse<CustomerResponse> register(@RequestBody CustomerRegisterRequest request) throws JOSEException {
         return ApiResponse.<CustomerResponse>builder()
                 .result(customerAuthService.register(request))
+                .build();
+    }
+
+    @PostMapping("/forgot-password")
+    ApiResponse<String> forgotPassword(@RequestBody CustomerForgotPasswordRequest request) throws JOSEException {
+        return ApiResponse.<String>builder()
+                .result(customerAuthService.forgotPassword(request))
                 .build();
     }
 

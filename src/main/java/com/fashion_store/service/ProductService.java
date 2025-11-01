@@ -4,6 +4,7 @@ import com.fashion_store.Utils.GenerateSlugUtils;
 import com.fashion_store.dto.attribute.response.AttributeValueResponse;
 import com.fashion_store.dto.category.response.CategoryResponse;
 import com.fashion_store.dto.product.request.ProductUpdateRequest;
+import com.fashion_store.dto.product.response.ProductFeaturedResponse;
 import com.fashion_store.dto.product.response.ProductFromCategoryResponse;
 import com.fashion_store.dto.product.response.ProductResponse;
 import com.fashion_store.dto.variant.request.VariantCreateRequest;
@@ -21,6 +22,9 @@ import com.fashion_store.repository.*;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -210,6 +214,15 @@ public class ProductService extends GenerateService<Product, Long> {
         return productMapper.toProductResponse(copyProduct);
     }
 
+    public List<ProductResponse> getNew(Integer quantity) {
+        return productRepository.findAll(Sort.by(Sort.Direction.DESC, "createdAt"))
+                .stream()
+                .filter(item -> item.getIsDeleted() == false && item.getStatus() == true)
+                .limit(quantity)
+                .map(productMapper::toProductResponse)
+                .collect(Collectors.toList());
+    }
+
     public List<ProductResponse> getAll(boolean deleted, String name) {
         return productRepository.findAll()
                 .stream()
@@ -269,6 +282,41 @@ public class ProductService extends GenerateService<Product, Long> {
 
                     return response;
                 })
+                .collect(Collectors.toList());
+    }
+
+    public List<ProductFeaturedResponse> getFeatured(Integer quantity) {
+        return productRepository.findAllByIsDeletedFalseAndStatusTrueAndIsFeaturedTrue()
+                .stream()
+                .map(productMapper::toProductFeaturedResponse)
+                .limit(quantity)
+                .collect(Collectors.toList());
+    }
+
+    public List<ProductFeaturedResponse> suggest(Long id, Integer quantity) {
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new AppException(ErrorCode.NOT_EXIST));
+        return productRepository.findAllByIsDeletedFalseAndStatusTrueAndIsFeaturedTrue()
+                .stream()
+                .filter(item -> item.getCategory().getId() == product.getCategory().getId() || item.getBrand().getId() == product.getBrand().getId() && item.getId() != product.getId())
+                .map(productMapper::toProductFeaturedResponse)
+                .limit(quantity)
+                .collect(Collectors.toList());
+    }
+
+    public List<ProductFeaturedResponse> getSale(Integer quantity) {
+        return productRepository.getSaleProduct(quantity)
+                .stream()
+                .map(productMapper::toProductFeaturedResponse)
+                .limit(quantity)
+                .collect(Collectors.toList());
+    }
+
+    public List<ProductFeaturedResponse> getByCategoryFeature(Integer quantity) {
+        return productRepository.findAllByIsDeletedFalseAndStatusTrueAndIsFeaturedTrue()
+                .stream()
+                .map(productMapper::toProductFeaturedResponse)
+                .limit(quantity)
                 .collect(Collectors.toList());
     }
 

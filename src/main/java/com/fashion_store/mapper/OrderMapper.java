@@ -1,5 +1,6 @@
 package com.fashion_store.mapper;
 
+import com.fashion_store.dto.DashboardSummary.response.OrderDashboardResponse;
 import com.fashion_store.dto.order.request.OrderCreateRequest;
 import com.fashion_store.dto.order.request.OrderUpdateRequest;
 import com.fashion_store.dto.order.response.OrderResponse;
@@ -17,4 +18,7 @@ public interface OrderMapper {
     OrderResponse toOrderResponse(Order order);
 
     void updateOrder(@MappingTarget Order order, OrderUpdateRequest orderUpdateRequest);
+
+    @Mapping(target = "numOfProduct", expression = "java(order.getOrderItems().size())")
+    OrderDashboardResponse toDashboardOrderResponse(Order order);
 }

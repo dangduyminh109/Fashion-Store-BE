@@ -2,6 +2,7 @@ package com.fashion_store.service;
 
 import com.fashion_store.Utils.GenerateSlugUtils;
 import com.fashion_store.dto.post.request.PostRequest;
+import com.fashion_store.dto.post.response.PostClientResponse;
 import com.fashion_store.dto.post.response.PostResponse;
 import com.fashion_store.entity.Post;
 import com.fashion_store.entity.Topic;
@@ -13,6 +14,9 @@ import com.fashion_store.repository.TopicRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Service;
 
@@ -27,7 +31,7 @@ public class PostService extends GenerateService<Post, Long> {
     PostRepository postRepository;
     CloudinaryService cloudinaryService;
     PostMapper postMapper;
-    private final TopicRepository topicRepository;
+    TopicRepository topicRepository;
 
     @Override
     JpaRepository<Post, Long> getRepository() {
@@ -78,6 +82,15 @@ public class PostService extends GenerateService<Post, Long> {
                 .stream()
                 .filter(item -> item.getIsDeleted() == deleted)
                 .map(postMapper::toPostResponse)
+                .collect(Collectors.toList());
+    }
+
+
+    public List<PostClientResponse> getFeatured(Integer quantity) {
+        Pageable pageable = PageRequest.of(0, quantity, Sort.by(Sort.Direction.DESC, "createdAt"));
+        return postRepository.findAllByIsDeletedFalseAndStatusTrue(pageable)
+                .stream()
+                .map(postMapper::toPostClientResponse)
                 .collect(Collectors.toList());
     }
 

@@ -42,9 +42,10 @@ public class SecurityConfig {
     private CustomOAuth2UserService customOAuth2UserService;
     @Autowired
     private OAuth2SuccessHandler oAuth2SuccessHandler;
-
     @Autowired
-    CustomJwtDecoder customJwtDecoder;
+    private JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+    @Autowired
+    private CustomJwtDecoder customJwtDecoder;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity httpSecurity) throws Exception {
@@ -60,8 +61,9 @@ public class SecurityConfig {
                                 jwtConfigurer.decoder(customJwtDecoder)
                                         .jwtAuthenticationConverter(customJwtAuthenticationConverter)
                         )
-                        .authenticationEntryPoint(new JwtAuthenticationEntryPoint())
+                        .authenticationEntryPoint(jwtAuthenticationEntryPoint)
                 )
+                .exceptionHandling(ex -> ex.authenticationEntryPoint(jwtAuthenticationEntryPoint))
                 .with(new OAuth2LoginConfigurer<HttpSecurity>(), oauth2 -> oauth2
                         .successHandler(oAuth2SuccessHandler)
                         .userInfoEndpoint(userInfo -> userInfo

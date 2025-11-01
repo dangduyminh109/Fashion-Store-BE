@@ -29,6 +29,13 @@ public class Address extends BaseModel {
     @Column(nullable = false)
     String ward;
 
+    @Column(nullable = false)
+    Integer cityId;
+    @Column(nullable = false)
+    Integer districtId;
+    @Column(nullable = false)
+    Integer wardId;
+
     Boolean isDefault;
 
     @ManyToOne
