@@ -1,6 +1,7 @@
 package com.fashion_store.controller.client;
 
 import com.fashion_store.dto.common.response.ApiResponse;
+import com.fashion_store.dto.product.response.ProductClientResponse;
 import com.fashion_store.dto.product.response.ProductFeaturedResponse;
 import com.fashion_store.dto.product.response.ProductFromCategoryResponse;
 import com.fashion_store.dto.product.response.ProductResponse;
@@ -20,9 +21,13 @@ public class ProductController {
     ProductService productService;
 
     @GetMapping
-    public ApiResponse<List<ProductResponse>> getAll() {
-        return ApiResponse.<List<ProductResponse>>builder()
-                .result(productService.getProduct())
+    public ApiResponse<ProductClientResponse> getAll(
+            @RequestParam(required = false) String categoryIds,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "12") int size
+    ) {
+        return ApiResponse.<ProductClientResponse>builder()
+                .result(productService.getProduct(page, size, categoryIds))
                 .build();
     }
 

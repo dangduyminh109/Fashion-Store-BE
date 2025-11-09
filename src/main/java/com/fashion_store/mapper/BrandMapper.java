@@ -1,6 +1,7 @@
 package com.fashion_store.mapper;
 
 import com.fashion_store.dto.brand.request.BrandRequest;
+import com.fashion_store.dto.brand.response.BrandClientResponse;
 import com.fashion_store.dto.brand.response.BrandResponse;
 import com.fashion_store.entity.Brand;
 import org.mapstruct.Mapper;
@@ -16,6 +17,8 @@ public interface BrandMapper {
     Brand toBrand(BrandRequest brandRequest);
 
     BrandResponse toBrandResponse(Brand brand);
+
+    BrandClientResponse toBrandClientResponse(Brand brand);
 
     @Mapping(target = "isDeleted", ignore = true)
     @Mapping(target = "image", ignore = true)

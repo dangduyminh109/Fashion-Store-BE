@@ -11,11 +11,9 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class AttributeResponse {
+public class AttributeClientResponse {
     Long id;
     String name;
     AttributeDisplayType attributeDisplayType;
     List<AttributeValueResponse> listAttributeValue;
-    Boolean isDeleted;
-    Boolean status;
 }

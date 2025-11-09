@@ -1,6 +1,8 @@
 package com.fashion_store.repository;
 
 import com.fashion_store.entity.Product;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -21,6 +23,8 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
     List<Product> findAllByIsDeletedFalseAndStatusTrueAndIsFeaturedTrue();
 
+    Page<Product> findAllByIsDeletedFalseAndStatusTrue(Pageable pageable);
+
     @Query(value = """
               select * from products p
                  where p.id in (
@@ -33,4 +37,5 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
             """, nativeQuery = true)
     List<Product> getSaleProduct(@Param("quantity") int quantity);
 
+    Page<Product> findByIsDeletedFalseAndStatusTrueAndCategoryIdIn(List<Long> categoryIds, Pageable pageable);
 }

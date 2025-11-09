@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface PostRepository extends JpaRepository<Post, Long> {
@@ -24,4 +25,8 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     Integer countPostsByYearAndMonth(@Param("year") int year, @Param("month") int month);
 
     Page<Post> findAllByIsDeletedFalseAndStatusTrue(Pageable pageable);
+
+    Page<Post> findByIsDeletedFalseAndStatusTrueAndTopicIdIn(List<Long> topicIds, Pageable pageable);
+
+    Optional<Post> findBySlug(String slug);
 }

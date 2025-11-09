@@ -22,6 +22,7 @@ public class Attribute extends BaseModel {
     Long id;
     @Column(nullable = false)
     String name;
+    Boolean status;
 
     AttributeDisplayType displayType;
 

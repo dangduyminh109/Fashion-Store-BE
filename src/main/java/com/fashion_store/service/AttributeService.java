@@ -2,6 +2,7 @@ package com.fashion_store.service;
 
 import com.fashion_store.dto.attribute.request.AttributeRequest;
 import com.fashion_store.dto.attribute.request.AttributeValueItemRequest;
+import com.fashion_store.dto.attribute.response.AttributeClientResponse;
 import com.fashion_store.dto.attribute.response.AttributeResponse;
 import com.fashion_store.entity.Attribute;
 import com.fashion_store.entity.AttributeValue;
@@ -104,6 +105,20 @@ public class AttributeService extends GenerateService<Attribute, Long> {
         return response;
     }
 
+    public List<AttributeClientResponse> getAllAttribute() {
+        return attributeRepository.findAll()
+                .stream()
+                .filter(item -> item.getIsDeleted() == false && item.getStatus())
+                .map(attribute -> {
+                    AttributeClientResponse response = attributeMapper.toAttributeClientResponse(attribute);
+                    response.setAttributeDisplayType(attribute.getDisplayType());
+                    response.setListAttributeValue(attribute.getAttributeValues().stream()
+                            .map(attributeValueMapper::toAttributeValueResponse).toList());
+                    return response;
+                })
+                .collect(Collectors.toList());
+    }
+
     @Transactional
     public AttributeResponse update(AttributeRequest request, Long id) {
         Attribute attribute = attributeRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.NOT_EXIST));
@@ -197,4 +212,15 @@ public class AttributeService extends GenerateService<Attribute, Long> {
 
         return response;
     }
+
+    public void status(Long id) {
+        Attribute attribute = attributeRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.NOT_EXIST));
+        try {
+            attribute.setStatus(attribute.getStatus() == null || !attribute.getStatus());
+            attributeRepository.save(attribute);
+        } catch (Exception e) {
+            throw new AppException(ErrorCode.INTERNAL_EXCEPTION);
+        }
+    }
+
 }

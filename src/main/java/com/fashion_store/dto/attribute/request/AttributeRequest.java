@@ -24,6 +24,9 @@ public class AttributeRequest {
     @Builder.Default
     String displayType = "text";
 
+    @Builder.Default
+    Boolean status = true;
+
     @Size(min = 1, message = "INVALID_ATTRIBUTE_COUNT")
     @NotNull(message = "INVALID_ATTRIBUTE_COUNT")
     @Valid

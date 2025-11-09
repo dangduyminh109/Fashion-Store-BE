@@ -65,6 +65,16 @@ public class AttributeController {
                 .build();
     }
 
+
+    @PatchMapping("/{id}/status")
+    @PreAuthorize("hasAuthority('CATEGORY_UPDATE')")
+    public ApiResponse<Void> status(@PathVariable Long id) {
+        attributeService.status(id);
+        return ApiResponse.<Void>builder()
+                .message("Cập nhật trạng thái thành công")
+                .build();
+    }
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAuthority('ATTRIBUTE_UPDATE')")
     public ApiResponse<AttributeResponse> delete(@PathVariable Long id) {

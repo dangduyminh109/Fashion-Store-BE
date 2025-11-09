@@ -4,6 +4,7 @@ import com.fashion_store.Utils.GenerateSlugUtils;
 import com.fashion_store.dto.attribute.response.AttributeValueResponse;
 import com.fashion_store.dto.category.response.CategoryResponse;
 import com.fashion_store.dto.product.request.ProductUpdateRequest;
+import com.fashion_store.dto.product.response.ProductClientResponse;
 import com.fashion_store.dto.product.response.ProductFeaturedResponse;
 import com.fashion_store.dto.product.response.ProductFromCategoryResponse;
 import com.fashion_store.dto.product.response.ProductResponse;
@@ -22,6 +23,7 @@ import com.fashion_store.repository.*;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -135,60 +137,91 @@ public class ProductService extends GenerateService<Product, Long> {
         return productMapper.toProductResponse(product);
     }
 
-    public List<ProductResponse> getProduct() {
-        return productRepository.findAll()
-                .stream()
-                .filter(item -> item.getIsDeleted() == false && item.getStatus() == true)
-                .map(item -> {
-                    // Map sang DTO bằng mapper
-                    ProductResponse response = productMapper.toProductResponse(item);
+    private void GetListCategoryId(Category category, List<Long> listCategoryId) {
+        listCategoryId.add(category.getId());
+        category.getChildren().forEach(c -> GetListCategoryId(c, listCategoryId));
+    }
 
-                    // Nếu không có variants thì trả luôn
-                    if (response == null || response.getVariants() == null || item.getVariants() == null) {
-                        return response;
-                    }
+    public ProductClientResponse getProduct(int page, int size, String categoryIds) {
+        Pageable pageable = PageRequest.of(page, size);
+        List<Long> listCategoryId = new ArrayList<>();
+        if (categoryIds != null) {
+            Set<Long> listId = Arrays.stream(categoryIds.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .map(Long::parseLong)
+                    .collect(Collectors.toSet());
+            List<Category> category = categoryRepository.findByIdIn(listId);
+            category.forEach((c) -> {
+                GetListCategoryId(c, listCategoryId);
+            });
+        }
 
-                    Map<Long, Variant> variantEntityById = item.getVariants().stream()
-                            .filter(v -> v.getId() != null)
-                            .collect(Collectors.toMap(
-                                    Variant::getId,
-                                    v -> v,
-                                    (existing, replacement) -> existing // giữ bản đầu khi trùng id
-                            ));
+        Page<Product> listProduct = null;
+        if (!listCategoryId.isEmpty()) {
+            listProduct = productRepository.findByIsDeletedFalseAndStatusTrueAndCategoryIdIn(listCategoryId, pageable);
+        } else {
+            listProduct = productRepository.findAllByIsDeletedFalseAndStatusTrue(pageable);
+        }
 
-                    // Duyệt từng variant DTO, tìm entity tương ứng và gán attribute fields
-                    response.getVariants().forEach(variantResponse -> {
-                        if (variantResponse == null) return;
+        return ProductClientResponse.builder()
+                .listProduct(
+                        listProduct
+                                .getContent()
+                                .stream()
+                                .map(item -> {
+                                    // Map sang DTO bằng mapper
+                                    ProductResponse response = productMapper.toProductResponse(item);
 
-                        Long variantId = variantResponse.getId();
-                        Variant variantEntity = variantEntityById.get(variantId);
-                        if (variantEntity == null || variantEntity.getAttributeValues() == null) return;
+                                    // Nếu không có variants thì trả luôn
+                                    if (response == null || response.getVariants() == null || item.getVariants() == null) {
+                                        return response;
+                                    }
 
-                        // Map attributeValueId -> AttributeValue entity
-                        Map<Long, AttributeValue> attrValEntityById = variantEntity.getAttributeValues().stream()
-                                .filter(av -> av.getId() != null)
-                                .collect(Collectors.toMap(AttributeValue::getId, av -> av));
+                                    Map<Long, Variant> variantEntityById = item.getVariants().stream()
+                                            .filter(v -> v.getId() != null)
+                                            .collect(Collectors.toMap(
+                                                    Variant::getId,
+                                                    v -> v,
+                                                    (existing, replacement) -> existing // giữ bản đầu khi trùng id
+                                            ));
 
-                        if (variantResponse.getAttributeValues() == null) return;
+                                    // Duyệt từng variant DTO, tìm entity tương ứng và gán attribute fields
+                                    response.getVariants().forEach(variantResponse -> {
+                                        if (variantResponse == null) return;
 
-                        variantResponse.getAttributeValues().forEach(attrValResp -> {
-                            if (attrValResp == null) return;
+                                        Long variantId = variantResponse.getId();
+                                        Variant variantEntity = variantEntityById.get(variantId);
+                                        if (variantEntity == null || variantEntity.getAttributeValues() == null) return;
 
-                            Long attrValId = attrValResp.getId();
-                            AttributeValue attrValEntity = attrValEntityById.get(attrValId);
-                            if (attrValEntity == null) return;
+                                        // Map attributeValueId -> AttributeValue entity
+                                        Map<Long, AttributeValue> attrValEntityById = variantEntity.getAttributeValues().stream()
+                                                .filter(av -> av.getId() != null)
+                                                .collect(Collectors.toMap(AttributeValue::getId, av -> av));
 
-                            if (attrValEntity.getAttribute() != null) {
-                                attrValResp.setAttributeId(attrValEntity.getAttribute().getId());
-                                attrValResp.setAttributeName(attrValEntity.getAttribute().getName());
-                                attrValResp.setDisplayType(attrValEntity.getAttribute().getDisplayType());
-                            }
-                        });
-                    });
+                                        if (variantResponse.getAttributeValues() == null) return;
 
-                    return response;
-                })
-                .collect(Collectors.toList());
+                                        variantResponse.getAttributeValues().forEach(attrValResp -> {
+                                            if (attrValResp == null) return;
+
+                                            Long attrValId = attrValResp.getId();
+                                            AttributeValue attrValEntity = attrValEntityById.get(attrValId);
+                                            if (attrValEntity == null) return;
+
+                                            if (attrValEntity.getAttribute() != null) {
+                                                attrValResp.setAttributeId(attrValEntity.getAttribute().getId());
+                                                attrValResp.setAttributeName(attrValEntity.getAttribute().getName());
+                                                attrValResp.setDisplayType(attrValEntity.getAttribute().getDisplayType());
+                                            }
+                                        });
+                                    });
+
+                                    return response;
+                                })
+                                .collect(Collectors.toList())
+                )
+                .totalPage(listProduct.getTotalPages())
+                .build();
     }
 
     public ProductResponse getVariant(Long id) {
@@ -298,7 +331,20 @@ public class ProductService extends GenerateService<Product, Long> {
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_EXIST));
         return productRepository.findAllByIsDeletedFalseAndStatusTrueAndIsFeaturedTrue()
                 .stream()
-                .filter(item -> item.getCategory().getId() == product.getCategory().getId() || item.getBrand().getId() == product.getBrand().getId() && item.getId() != product.getId())
+                .filter(item -> {
+                    if (Objects.equals(item.getId(), product.getId())) {
+                        return false;
+                    }
+                    if (item.getCategory() != null && product.getCategory() != null
+                            && Objects.equals(item.getCategory().getId(), product.getCategory().getId())) {
+                        return true;
+                    }
+                    if (item.getBrand() != null && product.getBrand() != null
+                            && Objects.equals(item.getBrand().getId(), product.getBrand().getId())) {
+                        return true;
+                    }
+                    return false;
+                })
                 .map(productMapper::toProductFeaturedResponse)
                 .limit(quantity)
                 .collect(Collectors.toList());

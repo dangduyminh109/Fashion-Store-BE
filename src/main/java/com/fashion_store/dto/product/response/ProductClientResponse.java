@@ -1,4 +1,4 @@
-package com.fashion_store.dto.post.response;
+package com.fashion_store.dto.product.response;
 
 import lombok.*;
 import lombok.experimental.FieldDefaults;
@@ -10,7 +10,7 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 @FieldDefaults(level = AccessLevel.PRIVATE)
-public class PostClientResponse {
-    List<PostFeaturedResponse> listPost;
+public class ProductClientResponse {
+    List<ProductResponse> listProduct;
     Integer totalPage;
 }

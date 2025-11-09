@@ -3,6 +3,7 @@ package com.fashion_store.service;
 import com.fashion_store.Utils.GenerateSlugUtils;
 import com.fashion_store.dto.post.request.PostRequest;
 import com.fashion_store.dto.post.response.PostClientResponse;
+import com.fashion_store.dto.post.response.PostFeaturedResponse;
 import com.fashion_store.dto.post.response.PostResponse;
 import com.fashion_store.entity.Post;
 import com.fashion_store.entity.Topic;
@@ -14,6 +15,7 @@ import com.fashion_store.repository.TopicRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
+import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
@@ -21,7 +23,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -85,8 +87,39 @@ public class PostService extends GenerateService<Post, Long> {
                 .collect(Collectors.toList());
     }
 
+    public PostClientResponse getPost(int page, int size, String topicIds) {
+        Pageable pageable = PageRequest.of(page, size);
+        List<Long> listTopicId = new ArrayList<>();
+        if (topicIds != null) {
+            Set<Long> listId = Arrays.stream(topicIds.split(","))
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .map(Long::parseLong)
+                    .collect(Collectors.toSet());
+            List<Topic> category = topicRepository.findByIdIn(listId);
+            listTopicId = category.stream().map(Topic::getId).toList();
+        }
 
-    public List<PostClientResponse> getFeatured(Integer quantity) {
+        Page<Post> listPost = null;
+        if (!listTopicId.isEmpty()) {
+            listPost = postRepository.findByIsDeletedFalseAndStatusTrueAndTopicIdIn(listTopicId, pageable);
+        } else {
+            listPost = postRepository.findAllByIsDeletedFalseAndStatusTrue(pageable);
+        }
+
+        return PostClientResponse.builder()
+                .listPost(
+                        listPost
+                                .getContent()
+                                .stream()
+                                .map(postMapper::toPostClientResponse)
+                                .collect(Collectors.toList())
+                )
+                .totalPage(listPost.getTotalPages())
+                .build();
+    }
+
+    public List<PostFeaturedResponse> getFeatured(Integer quantity) {
         Pageable pageable = PageRequest.of(0, quantity, Sort.by(Sort.Direction.DESC, "createdAt"));
         return postRepository.findAllByIsDeletedFalseAndStatusTrue(pageable)
                 .stream()
@@ -96,6 +129,12 @@ public class PostService extends GenerateService<Post, Long> {
 
     public PostResponse getInfo(Long id) {
         Post post = postRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.NOT_EXIST));
+        return postMapper.toPostResponse(post);
+    }
+
+
+    public PostResponse getInfoBySlug(String slug) {
+        Post post = postRepository.findBySlug(slug).orElseThrow(() -> new AppException(ErrorCode.NOT_EXIST));
         return postMapper.toPostResponse(post);
     }
 

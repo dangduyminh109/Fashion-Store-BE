@@ -54,6 +54,14 @@ public class TopicService extends GenerateService<Topic, Long> {
                 .collect(Collectors.toList());
     }
 
+    public List<TopicResponse> getTopic() {
+        return topicRepository.findAll()
+                .stream()
+                .filter(item -> item.getIsDeleted() == false && item.getStatus())
+                .map(topicMapper::toTopicResponse)
+                .collect(Collectors.toList());
+    }
+
     public TopicResponse getInfo(Long id) {
         Topic topic = topicRepository.findById(id).orElseThrow(() -> new AppException(ErrorCode.NOT_EXIST));
         return topicMapper.toTopicResponse(topic);

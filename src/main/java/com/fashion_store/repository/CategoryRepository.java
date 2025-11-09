@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 public interface CategoryRepository extends JpaRepository<Category, Long> {
@@ -18,6 +19,8 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
     Optional<Category> findBySlug(String slug);
 
     boolean existsByNameAndIdNot(String name, Long id);
+
+    List<Category> findByIdIn(Set<Long> ids);
 
     @Query(value = """
                (
