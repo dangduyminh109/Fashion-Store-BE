@@ -23,15 +23,14 @@ import com.fashion_store.repository.*;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.apache.commons.lang3.StringUtils;
+import org.springframework.data.domain.*;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -142,7 +141,7 @@ public class ProductService extends GenerateService<Product, Long> {
         category.getChildren().forEach(c -> GetListCategoryId(c, listCategoryId));
     }
 
-    public ProductClientResponse getProduct(int page, int size, String categoryIds) {
+    public ProductClientResponse getProduct(int page, int size, String categoryIds, Boolean promotion, String search) {
         Pageable pageable = PageRequest.of(page, size);
         List<Long> listCategoryId = new ArrayList<>();
         if (categoryIds != null) {
@@ -158,8 +157,17 @@ public class ProductService extends GenerateService<Product, Long> {
         }
 
         Page<Product> listProduct = null;
-        if (!listCategoryId.isEmpty()) {
+
+        if (!listCategoryId.isEmpty() && StringUtils.isNotBlank(search)) {
+            listProduct = productRepository.findByIsDeletedFalseAndStatusTrueAndCategoryIdInAndNameContainingIgnoreCase(listCategoryId, search, pageable);
+        } else if (StringUtils.isNotBlank(search)) {
+            listProduct = productRepository.findByIsDeletedFalseAndStatusTrueAndNameContainingIgnoreCase(search, pageable);
+        } else if (!listCategoryId.isEmpty() && !Boolean.TRUE.equals(promotion) && !StringUtils.isNotBlank(search)) {
             listProduct = productRepository.findByIsDeletedFalseAndStatusTrueAndCategoryIdIn(listCategoryId, pageable);
+        } else if (!listCategoryId.isEmpty() && Boolean.TRUE.equals(promotion)) {
+            listProduct = productRepository.findSaleProductsByCategoryIds(listCategoryId, pageable);
+        } else if (Boolean.TRUE.equals(promotion)) {
+            listProduct = productRepository.findSaleProductsHasPromotion(pageable);
         } else {
             listProduct = productRepository.findAllByIsDeletedFalseAndStatusTrue(pageable);
         }

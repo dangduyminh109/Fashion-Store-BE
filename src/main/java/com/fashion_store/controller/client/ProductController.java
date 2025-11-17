@@ -23,11 +23,13 @@ public class ProductController {
     @GetMapping
     public ApiResponse<ProductClientResponse> getAll(
             @RequestParam(required = false) String categoryIds,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) Boolean promotion,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "12") int size
     ) {
         return ApiResponse.<ProductClientResponse>builder()
-                .result(productService.getProduct(page, size, categoryIds))
+                .result(productService.getProduct(page, size, categoryIds, promotion, search))
                 .build();
     }
 

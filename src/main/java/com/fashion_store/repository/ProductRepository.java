@@ -12,7 +12,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface ProductRepository extends JpaRepository<Product, Long> {
+public interface ProductRepository extends JpaRepository<Product, Long>, ProductRepositoryCustom {
     boolean existsByName(String name);
 
     Optional<Product> findBySlug(String slug);
@@ -26,16 +26,83 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     Page<Product> findAllByIsDeletedFalseAndStatusTrue(Pageable pageable);
 
     @Query(value = """
-              select * from products p
-                 where p.id in (
-                         select v.product_id  from variants v
-                                 where v.status = true and v.is_deleted = false
-                                 and v.promotion_start_time <= SYSDATE() and v.promotion_end_time > SYSDATE()
-                 group by v.product_id
-             )
-             LIMIT :quantity
+            SELECT * FROM products p
+            WHERE p.id IN (
+                SELECT v.product_id
+                FROM variants v
+                WHERE v.status = true
+                  AND v.is_deleted = false
+                  AND v.promotional_price IS NOT NULL
+                  AND (v.promotion_start_time IS NULL OR v.promotion_start_time <= SYSDATE())
+                  AND (v.promotion_end_time IS NULL OR v.promotion_end_time > SYSDATE())
+                GROUP BY v.product_id
+            )
+            LIMIT :quantity
             """, nativeQuery = true)
     List<Product> getSaleProduct(@Param("quantity") int quantity);
 
+
     Page<Product> findByIsDeletedFalseAndStatusTrueAndCategoryIdIn(List<Long> categoryIds, Pageable pageable);
+
+    @Query(value = """
+            SELECT DISTINCT p.* 
+            FROM products p
+            JOIN variants v ON v.product_id = p.id
+            WHERE p.is_deleted = false
+              AND p.status = true
+              AND v.is_deleted = false
+              AND v.status = true
+              AND v.promotional_price IS NOT NULL
+              AND (v.promotion_start_time IS NULL OR v.promotion_start_time <= SYSDATE())
+              AND (v.promotion_end_time IS NULL OR v.promotion_end_time > SYSDATE())
+              AND p.category_id IN (:categoryIds)
+            """,
+            countQuery = """
+                    SELECT COUNT(DISTINCT p.id)
+                    FROM products p
+                    JOIN variants v ON v.product_id = p.id
+                    WHERE p.is_deleted = false
+                      AND p.status = true
+                      AND v.is_deleted = false
+                      AND v.status = true
+                      AND v.promotional_price IS NOT NULL
+                      AND (v.promotion_start_time IS NULL OR v.promotion_start_time <= SYSDATE())
+                      AND (v.promotion_end_time IS NULL OR v.promotion_end_time > SYSDATE())
+                      AND p.category_id IN (:categoryIds)
+                    """,
+            nativeQuery = true)
+    Page<Product> findSaleProductsByCategoryIds(@Param("categoryIds") List<Long> categoryIds, Pageable pageable);
+
+    @Query(value = """
+            SELECT DISTINCT p.* 
+            FROM products p
+            JOIN variants v ON v.product_id = p.id
+            WHERE p.is_deleted = false
+              AND p.status = true
+              AND v.is_deleted = false
+              AND v.status = true
+              AND v.promotional_price IS NOT NULL
+              AND (v.promotion_start_time IS NULL OR v.promotion_start_time <= SYSDATE())
+              AND (v.promotion_end_time IS NULL OR v.promotion_end_time > SYSDATE())
+            """,
+            countQuery = """
+                    SELECT COUNT(DISTINCT p.id)
+                    FROM products p
+                    JOIN variants v ON v.product_id = p.id
+                    WHERE p.is_deleted = false
+                      AND p.status = true
+                      AND v.is_deleted = false
+                      AND v.status = true
+                      AND v.promotional_price IS NOT NULL
+                      AND (v.promotion_start_time IS NULL OR v.promotion_start_time <= SYSDATE())
+                      AND (v.promotion_end_time IS NULL OR v.promotion_end_time > SYSDATE())
+                    """,
+            nativeQuery = true)
+    Page<Product> findSaleProductsHasPromotion(Pageable pageable);
+
+    Page<Product> findByIsDeletedFalseAndStatusTrueAndCategoryIdInAndNameContainingIgnoreCase(
+            List<Long> categoryIds, String search, Pageable pageable);
+
+    Page<Product> findByIsDeletedFalseAndStatusTrueAndNameContainingIgnoreCase(
+            String search, Pageable pageable);
 }

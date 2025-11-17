@@ -50,7 +50,7 @@ public enum ErrorCode {
     INVALID_TYPE_DATA(9120, "Kiểu dữ liệu không hợp lệ", HttpStatus.BAD_REQUEST),
     SKU_EXISTED(9120, "Mã sản phẩm bị trùng hoặc đã tồn tại", HttpStatus.BAD_REQUEST),
     CANNOT_DELETE_ATTRIBUTE_IN_USE(9120, "Không thể Cập Nhật/Xóa thuộc tính. Giá trị của thuộc tính đang được sử dụng", HttpStatus.BAD_REQUEST),
-    
+
     // ===== STOCK / QUANTITY (9130-9139) =====
     INVALID_QUANTITY(9130, "Số lượng phải lớn hơn 0", HttpStatus.BAD_REQUEST),
     INVALID_QUANTITY_UPDATE(9131, "Số lượng yêu cầu vượt quá số lượng hiện có", HttpStatus.BAD_REQUEST),
@@ -111,7 +111,11 @@ public enum ErrorCode {
     INVALID_ROLE_ID(9602, "ID vai trò không hợp lệ", HttpStatus.BAD_REQUEST),
     ROLE_IN_USE(9603, "Không thể xóa vai trò vì hiện đang được gán cho một hoặc nhiều người dùng", HttpStatus.BAD_REQUEST),
     ROLE_UPDATE_NOT_ALLOWED(9604, "Chỉ Admin mới có quền cập nhật vai trò", HttpStatus.BAD_REQUEST),
-    ROLE_DELETE_NOT_ALLOWED(9605, "Chỉ Admin mới có quền xóa vai trò", HttpStatus.BAD_REQUEST);
+    ROLE_DELETE_NOT_ALLOWED(9605, "Chỉ Admin mới có quền xóa vai trò", HttpStatus.BAD_REQUEST),
+
+    // ===== CHAT (9700-9799) =====
+    INVALID_MESSAGE(9700, "Tin nhắn không hợp lệ", HttpStatus.BAD_REQUEST),
+    INVALID_CHAT_ROLE(9701, "Vai trò không hợp lệ", HttpStatus.BAD_REQUEST);
 
     int code;
     String message;
