@@ -40,6 +40,7 @@ public class DataSeeder implements ApplicationRunner {
 
             Role adminRole = Role.builder()
                     .name("ADMIN")
+                    .status(true)
                     .permissions(new HashSet<>(allPermissions))
                     .build();
 

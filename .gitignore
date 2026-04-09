@@ -3,6 +3,7 @@ target/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
+**/src/main/resources/application.yaml
 
 ### STS ###
 .apt_generated
@@ -31,3 +32,14 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Python ###
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+
+### Recommend Service ###
+recommend-service/dataset_raw/
+recommend-service/app/utils/seed.sql
