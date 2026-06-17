@@ -25,6 +25,12 @@ public interface ProductRepository extends JpaRepository<Product, Long>, Product
 
     Page<Product> findAllByIsDeletedFalseAndStatusTrue(Pageable pageable);
 
+    Page<Product> findByIsDeletedFalseAndStatusTrueAndIdNotInAndCategoryIdIn(
+            List<Long> excludedIds, List<Long> categoryIds, Pageable pageable);
+
+    Page<Product> findByIsDeletedFalseAndStatusTrueAndIdNotInAndBrandIdIn(
+            List<Long> excludedIds, List<Long> brandIds, Pageable pageable);
+
     @Query(value = """
             SELECT * FROM products p
             WHERE p.id IN (

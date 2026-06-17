@@ -264,6 +264,99 @@ public class ProductService extends GenerateService<Product, Long> {
                 .collect(Collectors.toList());
     }
 
+    public List<ProductResponse> getRelatedFallback(List<Long> sourceIds, Set<Long> excludedIds, int quantity) {
+        if (sourceIds == null || sourceIds.isEmpty() || quantity <= 0) {
+            return List.of();
+        }
+
+        List<Long> uniqueSourceIds = sourceIds.stream()
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        if (uniqueSourceIds.isEmpty()) {
+            return List.of();
+        }
+
+        List<Product> sourceProducts = productRepository.findAllById(uniqueSourceIds);
+        if (sourceProducts.isEmpty()) {
+            return List.of();
+        }
+
+        List<Long> categoryIds = sourceProducts.stream()
+                .map(Product::getCategory)
+                .filter(Objects::nonNull)
+                .map(Category::getId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+        List<Long> brandIds = sourceProducts.stream()
+                .map(Product::getBrand)
+                .filter(Objects::nonNull)
+                .map(Brand::getId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList();
+
+        Set<Long> seenIds = new LinkedHashSet<>(excludedIds);
+        seenIds.addAll(uniqueSourceIds);
+        List<ProductResponse> result = new ArrayList<>();
+
+        if (!categoryIds.isEmpty()) {
+            Pageable pageable = PageRequest.of(
+                    0,
+                    quantity,
+                    Sort.by(Sort.Direction.DESC, "createdAt")
+            );
+            appendUniqueProducts(
+                    result,
+                    seenIds,
+                    productRepository.findByIsDeletedFalseAndStatusTrueAndIdNotInAndCategoryIdIn(
+                            new ArrayList<>(seenIds),
+                            categoryIds,
+                            pageable
+                    ).getContent(),
+                    quantity
+            );
+        }
+
+        if (result.size() < quantity && !brandIds.isEmpty()) {
+            Pageable pageable = PageRequest.of(
+                    0,
+                    quantity - result.size(),
+                    Sort.by(Sort.Direction.DESC, "createdAt")
+            );
+            appendUniqueProducts(
+                    result,
+                    seenIds,
+                    productRepository.findByIsDeletedFalseAndStatusTrueAndIdNotInAndBrandIdIn(
+                            new ArrayList<>(seenIds),
+                            brandIds,
+                            pageable
+                    ).getContent(),
+                    quantity
+            );
+        }
+
+        return result;
+    }
+
+    private void appendUniqueProducts(
+            List<ProductResponse> result,
+            Set<Long> seenIds,
+            List<Product> products,
+            int limit
+    ) {
+        for (Product product : products) {
+            if (result.size() >= limit) {
+                return;
+            }
+
+            if (product.getId() != null && seenIds.add(product.getId())) {
+                result.add(productMapper.toProductResponse(product));
+            }
+        }
+    }
+
     public List<ProductResponse> getAll(boolean deleted, String name) {
         return productRepository.findAll()
                 .stream()
@@ -337,7 +430,7 @@ public class ProductService extends GenerateService<Product, Long> {
     public List<ProductFeaturedResponse> suggest(Long id, Integer quantity) {
         Product product = productRepository.findById(id)
                 .orElseThrow(() -> new AppException(ErrorCode.NOT_EXIST));
-        return productRepository.findAllByIsDeletedFalseAndStatusTrueAndIsFeaturedTrue()
+        List<Product> matches = productRepository.findAllByIsDeletedFalseAndStatusTrueAndIsFeaturedTrue()
                 .stream()
                 .filter(item -> {
                     if (Objects.equals(item.getId(), product.getId())) {
@@ -353,8 +446,11 @@ public class ProductService extends GenerateService<Product, Long> {
                     }
                     return false;
                 })
-                .map(productMapper::toProductFeaturedResponse)
+                .collect(Collectors.toList());
+        java.util.Collections.shuffle(matches);
+        return matches.stream()
                 .limit(quantity)
+                .map(productMapper::toProductFeaturedResponse)
                 .collect(Collectors.toList());
     }
 

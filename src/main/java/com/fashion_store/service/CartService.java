@@ -18,6 +18,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.FieldDefaults;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Objects;
@@ -144,6 +145,7 @@ public class CartService {
                 .collect(Collectors.toList());
     }
 
+    @Transactional
     public void delete(Long variantId) {
         String customerId = SecurityUtils.getCurrentUserId();
         if (customerId == null)
@@ -154,20 +156,14 @@ public class CartService {
 
         Cart cart = customer.getCart();
         if (cart == null) {
-            cart = new Cart();
-            cart.setCustomer(customer);
-            cart = cartRepository.save(cart);
-            customer.setCart(cart);
-            customerRepository.save(customer);
+            return;
         }
 
-        Optional<CartItem> cartItem = cart.getCartItems().stream()
-                .filter(item -> Objects.equals(item.getVariant().getId(), variantId))
-                .findFirst();
-
-        if (cartItem.isPresent()) {
-            cart.getCartItems().remove(cartItem.get());
-            cartRepository.save(cart);
-        }
+        cartItemRepository.findByCartIdAndVariantId(cart.getId(), variantId)
+                .ifPresent(cartItem -> {
+                    cart.getCartItems().removeIf(item -> Objects.equals(item.getId(), cartItem.getId()));
+                    cartItem.setCart(null);
+                    cartItemRepository.delete(cartItem);
+                });
     }
 }
